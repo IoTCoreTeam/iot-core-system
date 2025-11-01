@@ -1,0 +1,9 @@
+[SENSOR]
+   ↓
+[ESP32 NODE]
+   ↓ (UART / BLE)
+[GATEWAY (Python / Node.js)]
+   ↓ (HTTP POST, Authorization: Bearer xxx)
+[LARAVEL API (/api/iot/upload)]
+   ↓
+[DB + Dashboard + Logs]

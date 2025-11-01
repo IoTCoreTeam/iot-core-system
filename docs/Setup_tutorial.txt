@@ -1,0 +1,24 @@
+1. SETUP ENV
+- composer global require laravel/installer
+- npm install
+
+- cp .env.example .env
+- setup .env to connect mysql
+- php artisan key:generate
+- php artisan migrate --seed
+
+2. SETUP LaravelPassport
+- php artisan install:api --passport
+- php artisan passport:keys --force
+- php artisan vendor:publish --tag=passport-config
+- then check key in storage/oauth-private.key and storage/oauth-public.key
+
+__________________________________________________________________________
+Passport Client Setup
+- php artisan passport:client --public
+
+  What should we name the client? [Laravel]
+❯ Nuxt
+
+  Where should we redirect the request after authorization? [http://localhost/auth/callback]
+❯ http://localhost:3000/auth/callback
