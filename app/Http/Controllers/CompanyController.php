@@ -14,11 +14,7 @@ class CompanyController extends Controller
      */
     public function index()
     {
-        $company = Company::first();
-
-        if(!$company) {
-            return $this->error('Company not found', 404);
-        }
+        $company = Company::firstOrFail();
         return $this->success($company);
     }
 
@@ -59,7 +55,10 @@ class CompanyController extends Controller
      */
     public function update(UpdatecompanyRequest $request, company $company)
     {
-        //
+        $company = Company::firstOrFail();
+        $company->update($request->validated());
+
+        return $this->success($company);
     }
 
     /**

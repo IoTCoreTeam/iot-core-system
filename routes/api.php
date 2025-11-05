@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\CompanyController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -15,3 +16,6 @@ Route::middleware('auth:api')->group(function () {
     Route::get('user', [AuthController::class, 'user']);
     Route::post('logout', [AuthController::class, 'logout']);
 });
+
+Route::get('/company', [CompanyController::class, 'index']);
+Route::put('/company', [CompanyController::class, 'update']);
