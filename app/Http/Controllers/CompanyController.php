@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\company;
+use App\Models\Company;
 use App\Http\Requests\StorecompanyRequest;
 use App\Http\Requests\UpdatecompanyRequest;
 use Illuminate\Support\Facades\DB;
@@ -14,8 +14,12 @@ class CompanyController extends Controller
      */
     public function index()
     {
-        $company = DB::table('companies')->firstOrFail();
-        return response()->json($company);
+        $company = Company::first();
+
+        if(!$company) {
+            return $this->error('Company not found', 404);
+        }
+        return $this->success($company);
     }
 
     /**
