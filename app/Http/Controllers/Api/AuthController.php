@@ -8,6 +8,8 @@ use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use App\Http\Requests\RegisterUserRequest;
+use Illuminate\Auth\Events\Login;
+use App\Http\Requests\LoginUserRequest;
 
 class AuthController extends Controller
 {
@@ -24,16 +26,13 @@ class AuthController extends Controller
         return $this->success(['message' => 'Registered successfully'], 201);
     }
 
-    public function login(Request $request)
+    public function login(LoginUserRequest $request)
     {
-        $validated = $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
-        ]);
+        $validatedData = $request->validated();
 
-        $user = User::where('email', $validated['email'])->first();
+        $user = User::where('email', $validatedData['email'])->first();
 
-        if (! $user || ! Hash::check($validated['password'], $user->password)) {
+        if (! $user || ! Hash::check($validatedData['password'], $user->password)) {
             throw ValidationException::withMessages([
                 'email' => ['The provided credentials are incorrect.'],
             ]);
@@ -41,7 +40,13 @@ class AuthController extends Controller
 
         $token = $user->createToken('frontend-token')->accessToken;
 
-        return $this->success(['access_token' => $token, 'token_type' => 'Bearer', 'user' => $user]);
+        return response()->json([
+            'suscess' => true,
+            'message' => 'Login successful',
+            'user' => $user,
+            'access_token' => $token,
+            'token_type' => 'Bearer',
+        ], 200);
     }
 
     public function user(Request $request)
