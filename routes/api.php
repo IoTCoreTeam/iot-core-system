@@ -16,10 +16,11 @@
         Route::get('user', [AuthController::class, 'user']);
         Route::post('logout', [AuthController::class, 'logout']);
         Route::post('register', [AuthController::class, 'register']);
+        Route::post('change-password', [AuthController::class, 'changePassword']);
     });
 
     Route::middleware('auth:api')->group(function () {
-        Route::get('/users/{id}', [UserController::class, 'index']);
+        Route::get('/users', [UserController::class, 'index']);
         Route::get('/company', [CompanyController::class, 'index']);
         Route::put('/company', [CompanyController::class, 'update']);
     });

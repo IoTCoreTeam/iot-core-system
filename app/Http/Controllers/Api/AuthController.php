@@ -7,9 +7,11 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use App\Http\Requests\RegisterUserRequest;
 use App\Http\Requests\LoginUserRequest;
+use App\Http\Requests\ChangePasswordRequest;
 
 class AuthController extends Controller
 {
@@ -54,6 +56,26 @@ class AuthController extends Controller
     {
         $request->user()->token()->revoke();
         return response()->json(['message' => 'Logged out']);
+    }
+
+    public function changePassword(ChangePasswordRequest $request)
+    {
+        $user = $request->user();
+        $validated = $request->validated();
+
+        return DB::transaction(function () use ($user, $validated) {
+            if (! Hash::check($validated['current_password'], $user->password)) {
+                throw ValidationException::withMessages([
+                    'current_password' => ['The current password is incorrect.'],
+                ]);
+            }
+
+            $user->forceFill([
+                'password' => $validated['new_password'],
+            ])->save();
+
+            return $this->success(['message' => 'Password updated successfully']);
+        });
     }
 
 }
