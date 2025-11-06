@@ -14,11 +14,17 @@
 - then check key in storage/oauth-private.key and storage/oauth-public.key
 
 __________________________________________________________________________
-Passport Client Setup
-- php artisan passport:client --public
+Personal Access Client
+PS C:\Users\admin\IoT-device-management> cd backend
+PS C:\Users\admin\IoT-device-management\backend> php artisan passport:client --personal
 
   What should we name the client? [Laravel]
-❯ Nuxt
+❯ Nuxt-App
 
-  Where should we redirect the request after authorization? [http://localhost/auth/callback]
-❯ http://localhost:3000/auth/callback
+  Which user provider should this client use to retrieve users? [users]
+  users .......................................................................................................................................... 0
+❯ users
+
+   INFO  New client created successfully.
+
+PS C:\Users\admin\IoT-device-management\backend>
