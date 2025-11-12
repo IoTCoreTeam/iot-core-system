@@ -56,13 +56,22 @@ class User extends Authenticatable implements OAuthenticatable
         ];
     }
     protected static function booted()
-{
-    static::creating(function ($user) {
-        $company = Company::first();
-        if ($company) {
-            $user->company_id = $company->id;
-        }
-    });
-}
+    {
+        static::creating(function ($user) {
+            $company = Company::first();
+            if ($company) {
+                $user->company_id = $company->id;
+            }
+        });
+    }
+
+    public function scopeSearch($query, $keyword)
+    {
+        return $query->where(function ($q) use ($keyword) {
+            $q->where('name', 'like', "%{$keyword}%")
+              ->orwhere('email', 'like', "%{$keyword}%")
+              ->orwhere('role', 'like', "%{$keyword}%");
+        });
+    }
 
 }
