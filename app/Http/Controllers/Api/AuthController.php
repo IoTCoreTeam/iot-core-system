@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Helpers\ApiResponse;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
@@ -17,8 +18,12 @@ class AuthController extends Controller
 {
     public function register(RegisterUserRequest $request)
     {
-        $user = User::create($request->validated());
-        return $this->success(['message' => 'Registered successfully'], 201);
+        try {
+            User::create($request->validated());
+            return ApiResponse::success(null, ['message' => 'Registered successfully'], 201);
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to register user', 500, $e->getMessage());
+        }
     }
 
     public function login(LoginUserRequest $request)
@@ -48,14 +53,23 @@ class AuthController extends Controller
         ], 200);
     }
 
-    public function user(){
-        return User::where('id', Auth::id())->firstOrFail();
+    public function user()
+    {
+        try {
+            return ApiResponse::success(User::where('id', Auth::id())->firstOrFail());
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to fetch user data', 500, $e->getMessage());
+        }
     }
 
     public function logout(Request $request)
     {
-        $request->user()->token()->revoke();
-        return response()->json(['message' => 'Logged out']);
+        try {
+            $request->user()->token()->revoke();
+            return ApiResponse::success(null, 'Logged out successfully');
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to logout', 500, $e->getMessage());
+        }
     }
 
     public function changePassword(ChangePasswordRequest $request)
@@ -74,8 +88,7 @@ class AuthController extends Controller
                 'password' => $validated['new_password'],
             ])->save();
 
-            return $this->success(['message' => 'Password updated successfully']);
+            return ApiResponse::success(null, 'Password changed successfully');
         });
     }
-
 }

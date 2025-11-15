@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Http\Requests\UpdateuserRequest;
 use App\Helpers\ApiResponse;
 
 class UserController extends Controller
@@ -25,12 +26,32 @@ class UserController extends Controller
 
     public function destroy($id)
     {
-        $deleted = User::destroy($id);
-
-        if (!$deleted) {
-            return ApiResponse::error('User not found', 404);
+        try{
+            User::destroy($id);
+            return ApiResponse::success(null, 'User deleted successfully');
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to delete user', 500, $e->getMessage());
         }
+    }
 
-        return ApiResponse::success(null, 'User deleted successfully');
+    public function update(UpdateuserRequest $request, $id)
+    {
+        try {
+            $user = User::find($id);
+            if (! $user) {
+                return ApiResponse::error('User not found', 404);
+            }
+            $data = $request->validated();
+            if (! array_key_exists('password', $data)) {
+                unset($data['password']);
+            }
+
+            $user->fill($data);
+            $user->save();
+
+            return ApiResponse::success($user, 'User updated successfully');
+        } catch (\Exception $e) {
+            return ApiResponse::error('Failed to update user', 500, $e->getMessage());
+        }
     }
 }
