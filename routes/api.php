@@ -22,6 +22,7 @@
     Route::middleware('auth:api')->group(function () {
         Route::delete('/users/{id}', [UserController::class, 'destroy']);
         Route::get('/users', [UserController::class, 'index']);
+        Route::post('/users/filter', [UserController::class, 'filter']);
         Route::put('/users/{id}', [UserController::class, 'update']);
 
         Route::get('/company', [CompanyController::class, 'index']);

@@ -59,4 +59,19 @@ class UserController extends Controller
             return ApiResponse::error('Failed to update user', 500, $e->getMessage());
         }
     }
+
+    public function filter(Request $request)
+    {
+        try {
+            $perPage = $request->integer('per_page', 5);
+            $filters = $request->input('filters', []);
+
+            $users = User::filterUsers($filters, $perPage);
+
+            return response()->json($users);
+        } catch (\Exception $e) {
+            Log::error('Failed to filter users', ['error' => $e->getMessage()]);
+            return ApiResponse::error('Failed to filter users', 500, $e->getMessage());
+        }
+    }
 }
