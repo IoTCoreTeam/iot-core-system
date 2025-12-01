@@ -30,6 +30,7 @@ class UpdateuserRequest extends FormRequest
                 'max:255',
                 Rule::unique('users', 'email')->ignore($this->route('id')),
             ],
+            'role' => 'sometimes|string',
         ];
     }
 
@@ -41,6 +42,7 @@ class UpdateuserRequest extends FormRequest
             'email.email' => 'Invalid email format.',
             'email.unique' => 'This email already exists.',
             'password.min' => 'Password must be at least 6 characters long.',
+            'role.string' => 'Role must be a string value.',
         ];
     }
 }

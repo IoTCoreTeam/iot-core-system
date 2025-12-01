@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Http\Requests\UpdateuserRequest;
 use App\Helpers\ApiResponse;
+use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
@@ -28,8 +29,10 @@ class UserController extends Controller
     {
         try{
             User::destroy($id);
+            Log::info('User deleted successfully', ['user_id' => $id]);
             return ApiResponse::success(null, 'User deleted successfully');
         } catch (\Exception $e) {
+            Log::error('Failed to delete user', ['user_id' => $id,'error' => $e->getMessage(),]);
             return ApiResponse::error('Failed to delete user', 500, $e->getMessage());
         }
     }
@@ -48,9 +51,11 @@ class UserController extends Controller
 
             $user->fill($data);
             $user->save();
+            Log::info('User updated successfully', ['user_id' => $user->id]);
 
             return ApiResponse::success($user, 'User updated successfully');
         } catch (\Exception $e) {
+            Log::error('Failed to update user', ['user_id' => $id,'error' => $e->getMessage(),]);
             return ApiResponse::error('Failed to update user', 500, $e->getMessage());
         }
     }

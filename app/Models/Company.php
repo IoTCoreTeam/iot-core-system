@@ -14,7 +14,9 @@ class Company extends Model
     protected $fillable = [
         'name',
         'address',
-        'contact_info',
+        'email',
+        'phone',
+        'fax',
     ];
 
     /** @use HasFactory<\Database\Factories\CompanyFactory> */
