@@ -1,30 +1,35 @@
-    <?php
+<?php
 
-    use Illuminate\Http\Request;
-    use Illuminate\Support\Facades\Route;
-    use App\Http\Controllers\Api\AuthController;
-    use App\Http\Controllers\CompanyController;
-    use App\Http\Controllers\UserController;
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\SystemLogController;
+use App\Http\Controllers\UserController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 
-    Route::get('/user', function (Request $request) {
-        return $request->user();
-    })->middleware('auth:api');
+Route::middleware('auth:api')->get('/user', function (Request $request) {
+    return $request->user();
+});
 
-    Route::post('login', [AuthController::class, 'login']);
+Route::post('login', [AuthController::class, 'login']);
 
-    Route::middleware('auth:api')->group(function () {
-        Route::get('user', [AuthController::class, 'user']);
-        Route::post('logout', [AuthController::class, 'logout']);
-        Route::post('register', [AuthController::class, 'register']);
-        Route::post('change-password', [AuthController::class, 'changePassword']);
-    });
+Route::middleware('auth:api')->group(function () {
+    Route::get('user', [AuthController::class, 'user']);
+    Route::post('logout', [AuthController::class, 'logout']);
+    Route::post('register', [AuthController::class, 'register']);
+    Route::post('change-password', [AuthController::class, 'changePassword']);
+});
 
-    Route::middleware('auth:api')->group(function () {
-        Route::delete('/users/{id}', [UserController::class, 'destroy']);
-        Route::get('/users', [UserController::class, 'index']);
-        Route::post('/users/filter', [UserController::class, 'filter']);
-        Route::put('/users/{id}', [UserController::class, 'update']);
+Route::middleware('auth:api')->group(function () {
+    Route::delete('/users/{id}', [UserController::class, 'destroy']);
+    Route::get('/users', [UserController::class, 'index']);
+    Route::post('/users/filter', [UserController::class, 'filter']);
+    Route::put('/users/{id}', [UserController::class, 'update']);
 
-        Route::get('/company', [CompanyController::class, 'index']);
-        Route::put('/company', [CompanyController::class, 'update']);
-    });
+    Route::get('/company', [CompanyController::class, 'index']);
+    Route::put('/company', [CompanyController::class, 'update']);
+});
+
+Route::middleware(['auth:api', 'admin'])->group(function () {
+    Route::apiResource('system-logs', SystemLogController::class)->only(['index', 'show']);
+});

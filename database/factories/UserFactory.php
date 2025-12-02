@@ -43,4 +43,18 @@ class UserFactory extends Factory
             'email_verified_at' => null,
         ]);
     }
+
+    /**
+     * Create a seeded administrator account.
+     */
+    public function admin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'name' => 'Administrator',
+            'email' => 'admin@gmail.com',
+            'role' => 'admin',
+            'password' => Hash::make('12345678'),
+            'email_verified_at' => now(),
+        ]);
+    }
 }

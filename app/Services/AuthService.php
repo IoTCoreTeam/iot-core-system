@@ -2,11 +2,11 @@
 
 namespace App\Services;
 
+use App\Helpers\SystemLogHelper;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 class AuthService
@@ -16,17 +16,17 @@ class AuthService
         try {
             $user = User::create($userData);
 
-            Log::info('User registered successfully', [
+            SystemLogHelper::log('auth.register.success', 'User registered successfully', [
                 'registered_user_id' => $user->id,
                 'email' => $user->email,
             ]);
 
             return $user;
         } catch (\Throwable $e) {
-            Log::error('Failed to register user', [
+            SystemLogHelper::log('auth.register.failed', 'Failed to register user', [
                 'email' => $userData['email'] ?? null,
                 'error' => $e->getMessage(),
-            ]);
+            ], ['level' => 'error']);
 
             throw $e;
         }
@@ -37,15 +37,15 @@ class AuthService
         try {
             $user = User::where('email', $credentials['email'])->first();
 
-            Log::info('Login attempt received', [
+            SystemLogHelper::log('auth.login.attempt', 'Login attempt received', [
                 'email' => $credentials['email'],
                 'user_exists' => (bool) $user,
             ]);
 
             if (! $user || ! Hash::check($credentials['password'], $user->password)) {
-                Log::warning('Login failed due to invalid credentials', [
+                SystemLogHelper::log('auth.login.failed', 'Login failed due to invalid credentials', [
                     'email' => $credentials['email'],
-                ]);
+                ], ['level' => 'warning']);
 
                 throw ValidationException::withMessages([
                     'email' => ['The provided credentials are incorrect.'],
@@ -56,7 +56,7 @@ class AuthService
 
             $token = $user->createToken('frontend-token')->accessToken;
 
-            Log::info('User logged in successfully', [
+            SystemLogHelper::log('auth.login.success', 'User logged in successfully', [
                 'user_id' => $user->id,
             ]);
 
@@ -68,10 +68,10 @@ class AuthService
         } catch (ValidationException $e) {
             throw $e;
         } catch (\Throwable $e) {
-            Log::error('Failed to login user', [
+            SystemLogHelper::log('auth.login.error', 'Failed to login user', [
                 'email' => $credentials['email'] ?? null,
                 'error' => $e->getMessage(),
-            ]);
+            ], ['level' => 'error']);
 
             throw $e;
         }
@@ -82,16 +82,16 @@ class AuthService
         try {
             $user = User::where('id', Auth::id())->firstOrFail();
 
-            Log::info('Fetched authenticated user data', [
+            SystemLogHelper::log('auth.user.fetched', 'Fetched authenticated user data', [
                 'user_id' => $user->id,
             ]);
 
             return $user;
         } catch (\Throwable $e) {
-            Log::error('Failed to fetch user data', [
+            SystemLogHelper::log('auth.user.fetch_failed', 'Failed to fetch user data', [
                 'auth_id' => Auth::id(),
                 'error' => $e->getMessage(),
-            ]);
+            ], ['level' => 'error']);
 
             throw $e;
         }
@@ -103,17 +103,19 @@ class AuthService
             if ($authUser) {
                 $authUser->token()->revoke();
 
-                Log::info('User logged out successfully', [
+                SystemLogHelper::log('auth.logout.success', 'User logged out successfully', [
                     'user_id' => $authUser->id,
                 ]);
             } else {
-                Log::notice('Logout called without an authenticated user');
+                SystemLogHelper::log('auth.logout.missing_user', 'Logout called without an authenticated user', [], [
+                    'level' => 'notice',
+                ]);
             }
         } catch (\Throwable $e) {
-            Log::error('Failed to logout', [
+            SystemLogHelper::log('auth.logout.failed', 'Failed to logout', [
                 'user_id' => $authUser?->id,
                 'error' => $e->getMessage(),
-            ]);
+            ], ['level' => 'error']);
 
             throw $e;
         }
@@ -124,9 +126,9 @@ class AuthService
         try {
             DB::transaction(function () use ($user, $payload) {
                 if (! Hash::check($payload['current_password'], $user->password)) {
-                    Log::warning('Password change rejected due to invalid current password', [
+                    SystemLogHelper::log('auth.password.invalid_current', 'Password change rejected due to invalid current password', [
                         'user_id' => $user->id,
-                    ]);
+                    ], ['level' => 'warning']);
 
                     throw ValidationException::withMessages([
                         'current_password' => ['The current password is incorrect.'],
@@ -137,17 +139,17 @@ class AuthService
                     'password' => $payload['new_password'],
                 ])->save();
 
-                Log::info('User changed password successfully', [
+                SystemLogHelper::log('auth.password.changed', 'User changed password successfully', [
                     'user_id' => $user->id,
                 ]);
             });
         } catch (ValidationException $e) {
             throw $e;
         } catch (\Throwable $e) {
-            Log::error('Failed to change password', [
+            SystemLogHelper::log('auth.password.failed', 'Failed to change password', [
                 'user_id' => $user->id ?? null,
                 'error' => $e->getMessage(),
-            ]);
+            ], ['level' => 'error']);
 
             throw $e;
         }

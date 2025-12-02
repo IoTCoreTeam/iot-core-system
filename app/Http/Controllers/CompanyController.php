@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Company;
 use App\Http\Requests\UpdatecompanyRequest;
 use App\Helpers\ApiResponse;
-use Illuminate\Support\Facades\Log;
+use App\Helpers\SystemLogHelper;
 
 class CompanyController extends Controller
 {
@@ -24,11 +24,16 @@ class CompanyController extends Controller
         try {
             $company = Company::firstOrFail();
             $company->update($request->validated());
-            Log::info('Company information updated successfully', ['company_info' => $company]);
+            SystemLogHelper::log('company.update.success', 'Company information updated successfully', [
+                'company_id' => $company->id,
+            ]);
 
             return ApiResponse::success($company);
         } catch (\Exception $e) {
-            Log::error('Failed to update company information', ['company_info' => $company, 'error' => $e->getMessage()]);
+            SystemLogHelper::log('company.update.failed', 'Failed to update company information', [
+                'company_id' => isset($company) ? $company->id : null,
+                'error' => $e->getMessage(),
+            ], ['level' => 'error']);
             return ApiResponse::error('Failed to update company data', 500, $e->getMessage());
         }
     }
