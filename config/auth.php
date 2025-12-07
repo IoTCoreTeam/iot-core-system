@@ -117,4 +117,24 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Refresh Token Settings
+    |--------------------------------------------------------------------------
+    |
+    | These options control how refresh tokens are managed for API auth.
+    | Tokens are persisted in the oauth_refresh_tokens table and mirrored
+    | inside an HTTP-only cookie so the frontend never handles them directly.
+    |
+    */
+
+    'refresh_tokens' => [
+        'cookie_name' => env('AUTH_REFRESH_COOKIE_NAME', 'iot_core_refresh_token'),
+        'ttl_days' => (int) env('AUTH_REFRESH_TOKEN_TTL_DAYS', 30),
+        'path' => env('AUTH_REFRESH_COOKIE_PATH', '/'),
+        'domain' => env('AUTH_REFRESH_COOKIE_DOMAIN', env('SESSION_DOMAIN', null)),
+        'secure' => (bool) env('AUTH_REFRESH_COOKIE_SECURE', false),
+        'same_site' => env('AUTH_REFRESH_COOKIE_SAME_SITE', 'lax'),
+    ],
+
 ];

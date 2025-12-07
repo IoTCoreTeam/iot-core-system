@@ -4,10 +4,13 @@ namespace App\Services;
 
 use App\Helpers\SystemLogHelper;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Laravel\Passport\Token as PassportToken;
 
 class AuthService
 {
@@ -52,24 +55,98 @@ class AuthService
                 ]);
             }
 
-            Auth::login($user);
-
-            $token = $user->createToken('frontend-token')->accessToken;
+            $tokens = $this->issueTokensForUser($user, true);
 
             SystemLogHelper::log('auth.login.success', 'User logged in successfully', [
                 'user_id' => $user->id,
             ]);
 
-            return [
-                'user' => $user,
-                'access_token' => $token,
-                'token_type' => 'Bearer',
-            ];
+            return $tokens;
         } catch (ValidationException $e) {
             throw $e;
         } catch (\Throwable $e) {
             SystemLogHelper::log('auth.login.error', 'Failed to login user', [
                 'email' => $credentials['email'] ?? null,
+                'error' => $e->getMessage(),
+            ], ['level' => 'error']);
+
+            throw $e;
+        }
+    }
+
+    public function refreshAccessToken(?string $refreshToken): array
+    {
+        try {
+            $plainToken = trim((string) $refreshToken);
+
+            if ($plainToken === '') {
+                throw ValidationException::withMessages([
+                    'refresh_token' => ['Refresh token is missing or invalid.'],
+                ]);
+            }
+
+            $hashedId = $this->hashRefreshToken($plainToken);
+            $record = DB::table('oauth_refresh_tokens')->where('id', $hashedId)->first();
+
+            if (! $record || $record->revoked) {
+                SystemLogHelper::log('auth.refresh.failed', 'Refresh token is invalid or revoked', [
+                    'refresh_token_id' => $hashedId,
+                ], ['level' => 'warning']);
+
+                throw ValidationException::withMessages([
+                    'refresh_token' => ['The provided refresh token is invalid.'],
+                ]);
+            }
+
+            $expiresAt = $record->expires_at ? Carbon::parse($record->expires_at) : null;
+            if ($expiresAt && $expiresAt->isPast()) {
+                $this->markRefreshTokenAsRevoked($hashedId);
+                SystemLogHelper::log('auth.refresh.expired', 'Refresh token expired', [
+                    'refresh_token_id' => $hashedId,
+                ], ['level' => 'notice']);
+
+                throw ValidationException::withMessages([
+                    'refresh_token' => ['Refresh token has expired. Please login again.'],
+                ]);
+            }
+
+            /** @var PassportToken|null $oldAccessToken */
+            $oldAccessToken = PassportToken::query()->where('id', $record->access_token_id)->first();
+
+            if (! $oldAccessToken || $oldAccessToken->revoked) {
+                $this->markRefreshTokenAsRevoked($hashedId);
+
+                throw ValidationException::withMessages([
+                    'refresh_token' => ['Associated access token is no longer valid.'],
+                ]);
+            }
+
+            $user = User::find($oldAccessToken->user_id);
+
+            if (! $user) {
+                $this->markRefreshTokenAsRevoked($hashedId);
+
+                throw ValidationException::withMessages([
+                    'refresh_token' => ['Unable to locate the user for this token.'],
+                ]);
+            }
+
+            DB::transaction(function () use ($oldAccessToken, $hashedId) {
+                $oldAccessToken->revoke();
+                $this->markRefreshTokenAsRevoked($hashedId);
+            });
+
+            $tokens = $this->issueTokensForUser($user);
+
+            SystemLogHelper::log('auth.refresh.success', 'Issued new access token via refresh token', [
+                'user_id' => $user->id,
+            ]);
+
+            return $tokens;
+        } catch (ValidationException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            SystemLogHelper::log('auth.refresh.error', 'Failed to refresh access token', [
                 'error' => $e->getMessage(),
             ], ['level' => 'error']);
 
@@ -97,20 +174,26 @@ class AuthService
         }
     }
 
-    public function logout(?User $authUser): void
+    public function logout(?User $authUser, ?string $refreshToken = null): void
     {
         try {
-            if ($authUser) {
-                $authUser->token()->revoke();
+            DB::transaction(function () use ($authUser, $refreshToken) {
+                if ($authUser && $authUser->token()) {
+                    $authUser->token()->revoke();
 
-                SystemLogHelper::log('auth.logout.success', 'User logged out successfully', [
-                    'user_id' => $authUser->id,
-                ]);
-            } else {
-                SystemLogHelper::log('auth.logout.missing_user', 'Logout called without an authenticated user', [], [
-                    'level' => 'notice',
-                ]);
-            }
+                    SystemLogHelper::log('auth.logout.success', 'User logged out successfully', [
+                        'user_id' => $authUser->id,
+                    ]);
+                } elseif (! $authUser) {
+                    SystemLogHelper::log('auth.logout.missing_user', 'Logout called without an authenticated user', [], [
+                        'level' => 'notice',
+                    ]);
+                }
+
+                if ($refreshToken) {
+                    $this->revokeRefreshToken($refreshToken);
+                }
+            });
         } catch (\Throwable $e) {
             SystemLogHelper::log('auth.logout.failed', 'Failed to logout', [
                 'user_id' => $authUser?->id,
@@ -153,5 +236,72 @@ class AuthService
 
             throw $e;
         }
+    }
+
+    protected function issueTokensForUser(User $user, bool $trackLogin = false): array
+    {
+        if ($trackLogin) {
+            Auth::login($user);
+        }
+
+        $tokenResult = $user->createToken('frontend-token');
+        $accessTokenModel = $tokenResult->token;
+        $refreshData = $this->createRefreshToken($accessTokenModel);
+
+        return [
+            'user' => $user,
+            'access_token' => $tokenResult->accessToken,
+            'token_type' => 'Bearer',
+            'access_token_expires_at' => $accessTokenModel->expires_at ? Carbon::parse($accessTokenModel->expires_at) : null,
+            'refresh_token' => $refreshData['token'],
+            'refresh_token_expires_at' => $refreshData['expires_at'],
+        ];
+    }
+
+    protected function createRefreshToken(PassportToken $accessToken): array
+    {
+        $plainToken = Str::random(64);
+        $hashedToken = $this->hashRefreshToken($plainToken);
+        $expiresAt = Carbon::now()->addDays($this->refreshTokenTtlDays());
+
+        DB::table('oauth_refresh_tokens')->insert([
+            'id' => $hashedToken,
+            'access_token_id' => $accessToken->id,
+            'revoked' => false,
+            'expires_at' => $expiresAt,
+        ]);
+
+        return [
+            'token' => $plainToken,
+            'expires_at' => $expiresAt,
+        ];
+    }
+
+    protected function refreshTokenTtlDays(): int
+    {
+        $config = config('auth.refresh_tokens');
+
+        return (int) ($config['ttl_days'] ?? 30);
+    }
+
+    protected function hashRefreshToken(string $token): string
+    {
+        return hash('sha256', $token);
+    }
+
+    protected function revokeRefreshToken(string $refreshToken): void
+    {
+        $hashedId = $this->hashRefreshToken($refreshToken);
+        $this->markRefreshTokenAsRevoked($hashedId);
+    }
+
+    protected function markRefreshTokenAsRevoked(string $hashedId): void
+    {
+        DB::table('oauth_refresh_tokens')
+            ->where('id', $hashedId)
+            ->update([
+                'revoked' => true,
+                'expires_at' => Carbon::now(),
+            ]);
     }
 }
