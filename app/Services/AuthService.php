@@ -159,10 +159,6 @@ class AuthService
         try {
             $user = User::where('id', Auth::id())->firstOrFail();
 
-            SystemLogHelper::log('auth.user.fetched', 'Fetched authenticated user data', [
-                'user_id' => $user->id,
-            ]);
-
             return $user;
         } catch (\Throwable $e) {
             SystemLogHelper::log('auth.user.fetch_failed', 'Failed to fetch user data', [
@@ -244,7 +240,7 @@ class AuthService
             Auth::login($user);
         }
 
-        $tokenResult = $user->createToken('frontend-token');
+        $tokenResult = $user->createToken('frontend-token', $this->scopesForUser($user));
         $accessTokenModel = $tokenResult->token;
         $refreshData = $this->createRefreshToken($accessTokenModel);
 
@@ -275,6 +271,27 @@ class AuthService
             'token' => $plainToken,
             'expires_at' => $expiresAt,
         ];
+    }
+
+    /**
+     * Build the default scopes that should be baked into the issued token.
+     *
+     * Embedding the role as a scope lets downstream services decode the JWT and
+     * determine the role without additional database calls.
+     *
+     * @return list<string>
+     */
+    protected function scopesForUser(User $user): array
+    {
+        $role = trim((string) ($user->role ?? ''));
+
+        if ($role === '') {
+            return [];
+        }
+
+        $normalizedRole = (string) str($role)->lower()->snake();
+
+        return ["role:{$normalizedRole}"];
     }
 
     protected function refreshTokenTtlDays(): int
