@@ -2,17 +2,14 @@
 
 namespace App\Models;
 
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 
 class SystemLog extends Model
 {
-    /** @use HasFactory<\Database\Factories\SystemLogFactory> */
     use HasFactory;
 
     protected $fillable = [
@@ -33,131 +30,148 @@ class SystemLog extends Model
         return $this->belongsTo(User::class);
     }
 
-    /**
-     * Build a normalized filter array that downstream scopes understand.
-     *
-     * @param  array<string, mixed>  $input
-     * @return array<string, mixed>
-     */
-    public static function normalizeFilters(array $input = []): array
-    {
-        $levels = $input['levels'] ?? [];
 
-        if (! is_array($levels)) {
-            $levels = [$levels];
-        }
-
-        return [
-            'keyword' => $input['search'] ?? $input['keyword'] ?? null,
-            'start' => $input['start'] ?? null,
-            'end' => $input['end'] ?? null,
-            'level' => $input['level'] ?? null,
-            'levels' => $levels,
-            'action' => $input['action'] ?? null,
-            'user_id' => $input['user_id'] ?? null,
-            'ip_address' => $input['ip_address'] ?? ($input['ip'] ?? null),
-        ];
-    }
-
-    /**
-     * Keep pagination bounds within safe defaults.
-     */
     public static function normalizePerPage(?int $perPage, int $default = 15): int
     {
-        $perPage = $perPage ?? $default;
-
-        return max(1, min($perPage, 100));
+        return max(1, min($perPage ?? $default, 100));
     }
 
-    /**
-     * Fetch paginated logs with relationships using normalized filters.
-     *
-     * @param  array<string, mixed>  $filters
-     */
-    public static function fetchForListing(array $filters = [], int $perPage = 15): LengthAwarePaginator
+    protected static function baseQuery()
     {
-        return static::query()
-            ->with('user:id,name,email')
-            ->applyFilters($filters)
-            ->orderByDesc('created_at')
+        return static::with('user:id,name,email')
+            ->orderByDesc('created_at');
+    }
+
+    public static function findWithUser(int|string $id): self
+    {
+        return static::baseQuery()->findOrFail($id);
+    }
+
+    public static function searchByKeywords(array $keywords, int $perPage = 15)
+    {
+        $terms = static::normalizeSearchTerms($keywords);
+
+        $query = static::baseQuery();
+
+        if ($terms === []) {
+            return $query->paginate($perPage);
+        }
+
+        return $query->where(function ($outer) use ($terms) {
+            foreach ($terms as $term) {
+                $outer->orWhere(function ($inner) use ($term) {
+                    $likeValue = "%{$term}%";
+
+                    $inner->where('action', 'like', $likeValue)
+                        ->orWhere('level', 'like', $likeValue)
+                        ->orWhere('message', 'like', $likeValue)
+                        ->orWhere('ip_address', 'like', $likeValue);
+                });
+            }
+        })->paginate($perPage);
+    }
+
+    public static function filterLogs(array $filters, int $perPage = 15)
+    {
+        return static::applyFilters(static::baseQuery(), $filters)
             ->paginate($perPage);
     }
 
-    /**
-     * Filter logs by a search keyword across action, level, message, and IP fields.
-     */
-    public function scopeSearch(Builder $query, ?string $keyword): Builder
+    public static function availableLevels(): array
     {
-        $keyword = is_string($keyword) ? trim($keyword) : '';
-
-        if ($keyword === '') {
-            return $query;
-        }
-
-        return $query->where(function (Builder $subQuery) use ($keyword): void {
-            $subQuery->where('action', 'like', "%{$keyword}%")
-                ->orWhere('level', 'like', "%{$keyword}%")
-                ->orWhere('message', 'like', "%{$keyword}%")
-                ->orWhere('ip_address', 'like', "%{$keyword}%");
-        });
+        return static::query()
+            ->select('level')
+            ->distinct()
+            ->pluck('level')
+            ->filter(static fn ($level) => is_string($level) && trim($level) !== '')
+            ->map(static fn ($level) => strtolower(trim((string) $level)))
+            ->unique()
+            ->values()
+            ->all();
     }
 
-    /**
-     * Restrict logs to a given time range.
-     */
-    public function scopeBetweenDates(Builder $query, ?string $start, ?string $end): Builder
+    public static function normalizeLevels(null|string|array $levels): array
     {
-        $startDate = static::parseBoundaryDate($start, true);
-        $endDate = static::parseBoundaryDate($end, false);
+        $values = is_array($levels) ? $levels : [$levels];
 
-        if ($startDate) {
-            $query->where('created_at', '>=', $startDate);
-        }
-
-        if ($endDate) {
-            $query->where('created_at', '<=', $endDate);
-        }
-
-        return $query;
+        return array_values(array_filter(array_map(
+            static fn ($value) => strtolower(trim((string) $value)),
+            array_filter($values, static fn ($value) => $value !== null)
+        ), static fn ($value) => $value !== ''));
     }
 
-    /**
-     * Apply a collection of supported filters to the query.
-     *
-     * Supported filters: keyword, start, end, level, levels, action, user_id, ip_address.
-     */
-    public function scopeApplyFilters(Builder $query, array $filters = []): Builder
+    public static function normalizeFilters(array $input): array
     {
-        $query
-            ->search($filters['keyword'] ?? null)
-            ->betweenDates($filters['start'] ?? null, $filters['end'] ?? null);
+        $action = isset($input['action']) ? trim((string) $input['action']) : '';
+        $levels = static::normalizeLevels($input['levels'] ?? null);
+        $userIdInput = $input['user_id'] ?? null;
+        $userId = is_numeric($userIdInput) ? (int) $userIdInput : null;
+        $ipValue = $input['ip_address'] ?? '';
+        $ipAddress = is_string($ipValue) ? trim($ipValue) : '';
+        $start = static::parseBoundaryDate($input['start'] ?? null, true);
+        $end = static::parseBoundaryDate($input['end'] ?? null, false);
 
-        $levelFilter = $filters['levels'] ?? $filters['level'] ?? null;
-        $levels = array_values(array_filter(array_map(
-            static fn ($value): string => strtolower(trim((string) $value)),
-            Arr::wrap($levelFilter)
-        )));
+        return [
+            'action' => $action,
+            'levels' => $levels,
+            'user_id' => $userId,
+            'ip_address' => $ipAddress,
+            'start' => $start,
+            'end' => $end,
+        ];
+    }
 
-        if ($levels !== []) {
-            $query->whereIn('level', $levels);
+    protected static function applyFilters(Builder $query, array $filters): Builder
+    {
+        if (! empty($filters['action'])) {
+            $query->where('action', $filters['action']);
         }
 
-        if (isset($filters['action']) && trim((string) $filters['action']) !== '') {
-            $query->where('action', trim((string) $filters['action']));
+        if (! empty($filters['levels'])) {
+            $query->whereIn('level', (array) $filters['levels']);
         }
 
-        if (! empty($filters['user_id']) && is_numeric($filters['user_id'])) {
+        if (! empty($filters['user_id'])) {
             $query->where('user_id', (int) $filters['user_id']);
         }
 
-        if (isset($filters['ip_address']) && trim((string) $filters['ip_address']) !== '') {
-            $query->where('ip_address', trim((string) $filters['ip_address']));
+        if (! empty($filters['ip_address'])) {
+            $query->where('ip_address', $filters['ip_address']);
+        }
+
+        if (! empty($filters['start'])) {
+            $query->where('created_at', '>=', $filters['start']);
+        }
+
+        if (! empty($filters['end'])) {
+            $query->where('created_at', '<=', $filters['end']);
         }
 
         return $query;
     }
 
-    protected static function parseBoundaryDate(?string $value, bool $isStart = true): ?Carbon
+    protected static function normalizeSearchTerms(array $values): array
+    {
+        $terms = [];
+
+        foreach ($values as $value) {
+            if (! is_string($value)) {
+                continue;
+            }
+
+            $trimmed = trim($value);
+
+            if ($trimmed === '' || in_array($trimmed, $terms, true)) {
+                continue;
+            }
+
+            $terms[] = $trimmed;
+        }
+
+        return $terms;
+    }
+
+    protected static function parseBoundaryDate($value, bool $isStart = true): ?Carbon
     {
         if (! is_string($value) || trim($value) === '') {
             return null;

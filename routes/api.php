@@ -32,5 +32,5 @@ Route::middleware('auth:api')->group(function () {
 });
 
 Route::middleware(['auth:api', 'admin'])->group(function () {
-    Route::apiResource('system-logs', SystemLogController::class)->only(['index', 'show']);
+    Route::get('system-logs', [SystemLogController::class, 'index']);
 });
