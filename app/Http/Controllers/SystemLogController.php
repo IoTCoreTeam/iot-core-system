@@ -2,44 +2,48 @@
 
 namespace App\Http\Controllers;
 
-use App\Helpers\ApiResponse;
 use App\Models\SystemLog;
 use Illuminate\Http\Request;
 
 class SystemLogController extends Controller
 {
-
-    
     public function index(Request $request)
     {
-        $perPage = SystemLog::normalizePerPage($request->integer('per_page'), 15);
-        if ($request->filled('id')) {
-            return SystemLog::findWithUser($request->query('id'));
+        $perpage = $request->integer('perpage', 15);
+        $query = SystemLog::query();
+
+        if ($request->filled('user_id')) {
+            $query->where('user_id', $request->query('user_id'));
         }
 
-        if ($request->filled('search') || $request->filled('keyword')) {
-            return SystemLog::searchByKeywords([
-                $request->query('search'),
-                $request->query('keyword'),
-            ], $perPage);
+        if ($request->filled('action')) {
+            $query->where('action', $request->query('action'));
         }
 
-        $filters = SystemLog::normalizeFilters([
-            'action' => $request->query('action'),
-            'levels' => $request->query('level'),
-            'user_id' => $request->query('user_id'),
-            'ip_address' => $request->query('ip_address') ?? $request->query('ip'),
-            'start' => $request->query('start'),
-            'end' => $request->query('end'),
-        ]);
-        return SystemLog::filterLogs($filters, $perPage);
-    }
+        if ($request->filled('level')) {
+            $query->where('level', $request->query('level'));
+        }
 
-    public function show(SystemLog $systemLog)
-    {
-        return ApiResponse::success(
-            $systemLog->load('user:id,name,email')
-        );
-    }
+        if ($request->filled('message')) {
+            $query->where('message', $request->query('message'));
+        }
 
+        if ($request->filled('ip_address')) {
+            $query->where('ip_address', $request->query('ip_address'));
+        }
+
+        if ($request->filled('context')) {
+            $query->where('context', $request->query('context'));
+        }
+
+        if ($request->filled('keyword')) {
+            $query->keyword($request->query('keyword'));
+        }
+
+        if ($request->filled('start') || $request->filled('end')) {
+            $query->time($request->query('start'), $request->query('end'));
+        }
+
+        return $query->paginate($perpage);
+    }
 }

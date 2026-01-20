@@ -138,10 +138,6 @@ class AuthService
 
             $tokens = $this->issueTokensForUser($user);
 
-            SystemLogHelper::log('auth.refresh.success', 'Issued new access token via refresh token', [
-                'user_id' => $user->id,
-            ]);
-
             return $tokens;
         } catch (ValidationException $e) {
             throw $e;
