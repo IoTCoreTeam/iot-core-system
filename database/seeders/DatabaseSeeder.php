@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             CompanySeeder::class,
             UserSeeder::class,
+            \Modules\ControlModule\Database\Seeders\ControlModuleDatabaseSeeder::class,
         ]);
     }
 }

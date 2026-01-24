@@ -1,0 +1,11 @@
+{
+    "name": "ControlModule",
+    "alias": "controlmodule",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\ControlModule\\Providers\\ControlModuleServiceProvider"
+    ],
+    "files": []
+}

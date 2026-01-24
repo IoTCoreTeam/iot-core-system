@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'node_server' => [
+        'base_url' => env('NODE_SERVER_BASE_URL', 'http://localhost:8017'),
+    ],
+
 ];
