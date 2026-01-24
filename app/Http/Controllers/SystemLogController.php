@@ -10,7 +10,7 @@ class SystemLogController extends Controller
     public function index(Request $request)
     {
         $perpage = $request->integer('perpage', 15);
-        $query = SystemLog::query();
+        $query = SystemLog::query()->latest();
 
         if ($request->filled('user_id')) {
             $query->where('user_id', $request->query('user_id'));

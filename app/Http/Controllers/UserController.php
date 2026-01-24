@@ -13,7 +13,7 @@ class UserController extends Controller
     public function index(Request $request)
     {
         // phân trang cho dữ liệu nguời dùng
-        $perPage = $request->integer('per_page', 5);
+        $perPage = $request->integer('per_page', 20);
 
         if ($request->has('id')) {
             return User::where('id', $request->query('id'))->firstOrFail();
@@ -27,7 +27,7 @@ class UserController extends Controller
 
     public function destroy($id)
     {
-        try{
+        try {
             User::destroy($id);
             SystemLogHelper::log('user.delete.success', 'User deleted successfully', [
                 'user_id' => $id,
@@ -73,7 +73,7 @@ class UserController extends Controller
     public function filter(Request $request)
     {
         try {
-            $perPage = $request->integer('per_page', 5);
+            $perPage = $request->integer('per_page', 20);
             $filters = $request->input('filters', []);
 
             $users = User::filterUsers($filters, $perPage);

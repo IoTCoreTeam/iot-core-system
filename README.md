@@ -1,84 +1,106 @@
-# Auth Service (Laravel Passport)
+# IoT Core Backend
 
-This project is the centralized authentication server for the IoT-core platform. It exposes OAuth2 / Passport endpoints that issue JWT access tokens and refresh tokens for the rest of the stack (frontend, control-module, etc.). Follow the steps below whenever you clone or pull this repository onto a new machine.
+This repository serves as the central backend service for the IoT-core platform, handling authentication, user management, and IoT device control through a modular architecture built on the Laravel framework.
 
-## 1. Requirements
+## Core Features
 
-- PHP 8.2+
+### 1. Centralized Authentication (Laravel Passport)
+- Managed OAuth2 server for issuing JWT Access Tokens and Refresh Tokens.
+- Provides authentication flows for the Frontend (Nuxt), Control Module, and other microservices.
+- Management of Personal Access and Password Grant clients.
+
+### 2. User and Account Management
+- Comprehensive management of users, roles (Admin, User), and company associations.
+- Advanced filtering and search capabilities for user administration.
+
+### 3. Modular Architecture
+- Leverages `nwidart/laravel-modules` for strict separation of business logic.
+- Designed for high scalability and maintainable code structure.
+
+### 4. Control Module (IoT Management)
+- Administration of IoT Gateways and End-Nodes.
+- Registration and deactivation workflows for Gateways.
+- API endpoints for querying available nodes and device status.
+
+### 5. System Logging and Audit
+- Integrated system logging for audit trails and troubleshooting.
+
+---
+
+## Module Structure
+
+The backend follows a modular architectural pattern:
+
+- `app/`: Contains core Laravel application logic (Models, Controllers, Providers).
+  - Includes global models such as `User.php`, `Company.php`, and `SystemLog.php`.
+- `Modules/`: Directory for independent business modules.
+  - `ControlModule/`: Dedicated module for IoT logic.
+    - `app/Http/Controllers/`: Controllers for Gateway and Node management.
+    - `database/`: Module-specific migrations, factories, and seeders.
+    - `routes/api.php`: API endpoints for device interaction.
+- `database/`: System-wide migrations and seeders for core entities.
+- `routes/`: Primary application routes (authentication, web).
+
+---
+
+## Technical Setup
+
+### 1. Prerequisites
+- PHP 8.2 or higher
 - Composer
-- Node.js 18+ (needed for Vite assets)
-- MySQL (or another database supported via `.env`)
+- Node.js 18 or higher (for asset compilation)
+- MySQL or a compatible relational database
 
-## 2. Fresh Clone / Pull Setup
+### 2. Installation Steps
 
-1. **Install global tooling (optional but recommended)**
-   ```bash
-   composer global require laravel/installer
-   npm install --global npm@latest
-   ```
-2. **Install project dependencies**
+1. **Install Dependencies**
    ```bash
    composer install
    npm install
    ```
-3. **Bootstrap environment configuration**
+
+2. **Environment Configuration**
    ```bash
    cp .env.example .env
    php artisan key:generate
    ```
-4. **Configure the database connection in `.env`**
-   ```
-   DB_CONNECTION=mysql
-   DB_HOST=127.0.0.1
-   DB_PORT=3306
-   DB_DATABASE=iot_auth
-   DB_USERNAME=...
-   DB_PASSWORD=...
-   ```
-5. **Run database migrations and seeders**
+   *Configure your database connection details in the newly created `.env` file.*
+
+3. **Database Initialization**
    ```bash
    php artisan migrate --seed
    ```
 
-## 3. Passport Initialization
+4. **Passport Initialization**
+   ```bash
+   php artisan install:api --passport
+   php artisan passport:keys --force
+   ```
+   *This generates the RSA keys required for secure token signing in the `storage/` directory.*
 
-Run these commands once per environment (or whenever you rotate keys):
+5. **Personal Access Client Setup**
+   ```bash
+   php artisan passport:client --personal
+   ```
 
-```bash
-php artisan install:api --passport
-php artisan passport:keys --force
-php artisan vendor:publish --tag=passport-config
-```
+### 3. Running the Application
 
-The commands above will generate fresh RSA keys at `storage/oauth-private.key` and `storage/oauth-public.key`. Keep the private key secure; other services only need the public key (see the Control Module README for how it consumes the public key).
+- **Development Server:**
+  ```bash
+  php artisan serve
+  ```
 
-### Personal Access Client
-
-If you need a dedicated personal access client (for Nuxt/frontend in local dev):
-
-```bash
-php artisan passport:client --personal
-```
-
-Accept the defaults or provide a descriptive client name (for example `Nuxt-App`). Record the generated client ID/secret if you plan to use password or client credentials flows.
-
-## 4. Useful Scripts
-
-- `composer setup`: Installs dependencies, generates `.env`, runs migrations, and builds assets (see `composer.json`).
-- `php artisan test`: Runs the automated test suite.
-- `php artisan serve`: Local HTTP server (use `php artisan queue:listen` in another terminal if you rely on queues).
-
-## 5. Regenerating Keys After Pulls
-
-Whenever the repo changes include Passport config updates, rerun:
-
-```bash
-php artisan migrate
-php artisan passport:keys --force
-```
-
-Then copy `storage/oauth-public.key` to downstream services (or share it via secrets management) so that middleware like `verify.central.token` can validate JWT signatures.
+- **Full Stack Concurrency (Server, Queue, Vite):**
+  ```bash
+  composer dev
+  ```
 
 ---
 
-If you hit issues during setup, check `docs/Setup_tutorial.txt` for quick reference commands or reach out to the platform team.
+## Utility Commands
+
+- `composer setup`: Orchestrates dependency installation, environment setup, migrations, and builds.
+- `php artisan test`: Executes the automated test suite.
+- `php artisan storage:link`: Establishes the symbolic link for public file storage.
+
+For detailed information on the setup process, refer to `docs/Setup_tutorial.txt` or contact the development team.
