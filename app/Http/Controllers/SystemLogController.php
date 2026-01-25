@@ -9,7 +9,7 @@ class SystemLogController extends Controller
 {
     public function index(Request $request)
     {
-        $perpage = $request->integer('perpage', 15);
+        $perpage = $request->integer('per_page', 15);
         $query = SystemLog::query()->latest();
 
         if ($request->filled('user_id')) {
@@ -45,5 +45,10 @@ class SystemLogController extends Controller
         }
 
         return $query->paginate($perpage);
+    }
+
+    public function count(Request $request)
+    {
+        return response()->json(SystemLog::countByWeekAndLevel());
     }
 }
