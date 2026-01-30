@@ -67,15 +67,6 @@ class User extends Authenticatable implements OAuthenticatable
         });
     }
 
-    public function scopeSearch($query, $keyword)
-    {
-        return $query->where(function ($q) use ($keyword) {
-            $q->where('name', 'like', "%{$keyword}%")
-              ->orwhere('email', 'like', "%{$keyword}%")
-              ->orwhere('role', 'like', "%{$keyword}%");
-        });
-    }
-
     public static function filterUsers(array $filters = [], int $perPage = 5)
     {
         return static::query()

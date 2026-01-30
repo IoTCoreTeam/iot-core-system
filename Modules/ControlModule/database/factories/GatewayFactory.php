@@ -20,10 +20,8 @@ class GatewayFactory extends Factory
         return [
             'name' => $this->faker->name() . ' Gateway',
             'external_id' => 'GW_' . $this->faker->unique()->randomNumber(5),
-            'connection_key' => $this->faker->unique()->uuid(),
-            'location' => $this->faker->city(),
+            'mac_address' => $this->faker->macAddress(),
             'ip_address' => $this->faker->ipv4(),
-            'description' => $this->faker->sentence(),
             'registration_status' => true,
         ];
     }

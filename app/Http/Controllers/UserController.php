@@ -7,22 +7,17 @@ use App\Models\User;
 use App\Http\Requests\UpdateuserRequest;
 use App\Helpers\ApiResponse;
 use App\Helpers\SystemLogHelper;
+use App\QueryBuilders\UserQueryBuilder;
 
 class UserController extends Controller
 {
     public function index(Request $request)
     {
-        // phân trang cho dữ liệu nguời dùng
-        $perPage = $request->integer('per_page', 20);
-
         if ($request->has('id')) {
-            return User::where('id', $request->query('id'))->firstOrFail();
+            return UserQueryBuilder::buildQuery($request)->firstOrFail();
         }
-        if ($request->has('search')) {
-            $keyword = $request->query('search');
-            return User::search($keyword)->paginate($perPage);
-        }
-        return User::paginate($perPage);
+
+        return UserQueryBuilder::fromRequest($request);
     }
 
     public function destroy($id)
@@ -46,16 +41,17 @@ class UserController extends Controller
     {
         try {
             $user = User::find($id);
-            if (! $user) {
-                return ApiResponse::error('User not found', 404);
-            }
+            if (! $user) {return ApiResponse::error('User not found', 404);}
+
             $data = $request->validated();
+
             if (! array_key_exists('password', $data)) {
                 unset($data['password']);
             }
 
             $user->fill($data);
             $user->save();
+
             SystemLogHelper::log('user.update.success', 'User updated successfully', [
                 'user_id' => $user->id,
             ]);
@@ -79,6 +75,7 @@ class UserController extends Controller
             $users = User::filterUsers($filters, $perPage);
 
             return response()->json($users);
+
         } catch (\Exception $e) {
             SystemLogHelper::log('user.filter.failed', 'Failed to filter users', [
                 'error' => $e->getMessage(),

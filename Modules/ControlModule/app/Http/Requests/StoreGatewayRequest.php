@@ -24,10 +24,8 @@ class StoreGatewayRequest extends FormRequest
         return [
             'name'                => 'required|string|max:255',
             'external_id'         => 'required|string|max:255',
-            'connection_key'      => 'nullable|string|max:255',
-            'location'            => 'nullable|string|max:255',
+            'mac_address'         => 'nullable|string|max:255',
             'ip_address'          => 'nullable|string|max:45',
-            'description'         => 'nullable|string',
             'registration_status' => 'nullable|boolean',
         ];
     }

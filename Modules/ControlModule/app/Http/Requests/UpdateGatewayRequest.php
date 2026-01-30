@@ -44,18 +44,8 @@ class UpdateGatewayRequest extends FormRequest
                     ->ignore($ignoreId)
                     ->whereNull('deleted_at'),
             ],
-            'connection_key' => [
-                'sometimes',
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('gateways', 'connection_key')
-                    ->ignore($ignoreId)
-                    ->whereNull('deleted_at'),
-            ],
-            'location'           => ['sometimes', 'nullable', 'string', 'max:255'],
+            'mac_address'        => ['sometimes', 'nullable', 'string', 'max:255'],
             'ip_address'         => ['sometimes', 'nullable', 'ip'],
-            'description'        => ['sometimes', 'nullable', 'string'],
             'registration_status' => ['sometimes', 'nullable', 'boolean'],
         ];
     }

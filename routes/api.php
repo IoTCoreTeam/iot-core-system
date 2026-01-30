@@ -33,5 +33,8 @@ Route::middleware('auth:api')->group(function () {
 
 Route::middleware(['auth:api', 'admin'])->group(function () {
     Route::get('system-logs', [SystemLogController::class, 'index']);
-    Route::get('metrics/system-logs-count', [SystemLogController::class, 'count']);
+});
+
+Route::middleware(['auth:api'])->group(function () {
+    Route::get('metrics/system-logs-count', [SystemLogController::class, 'countByWeekAndLevel']);
 });
