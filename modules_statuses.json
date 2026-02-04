@@ -1,3 +1,4 @@
 {
-    "ControlModule": true
+    "ControlModule": true,
+    "MapModule": true
 }

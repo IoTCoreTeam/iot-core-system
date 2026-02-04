@@ -28,6 +28,9 @@
             "Modules\\ControlModule\\": "Modules/ControlModule/app/",
             "Modules\\ControlModule\\Database\\Factories\\": "Modules/ControlModule/database/factories/",
             "Modules\\ControlModule\\Database\\Seeders\\": "Modules/ControlModule/database/seeders/",
+            "Modules\\MapModule\\": "Modules/MapModule/app/",
+            "Modules\\MapModule\\Database\\Factories\\": "Modules/MapModule/database/factories/",
+            "Modules\\MapModule\\Database\\Seeders\\": "Modules/MapModule/database/seeders/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/"
         }

@@ -1,0 +1,11 @@
+{
+    "name": "MapModule",
+    "alias": "mapmodule",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\MapModule\\Providers\\MapModuleServiceProvider"
+    ],
+    "files": []
+}
