@@ -20,10 +20,8 @@ class NodeControllerFactory extends Factory
     {
         return [
             'node_id' => Node::factory(),
-            'external_id' => 'ctrl-' . $this->faker->unique()->randomNumber(5),
-            'name' => $this->faker->words(2, true) . ' Controller',
             'firmware_version' => $this->faker->semver(),
-            'registration_status' => 'registered',
+            'control_url' => $this->faker->url(),
         ];
     }
 }

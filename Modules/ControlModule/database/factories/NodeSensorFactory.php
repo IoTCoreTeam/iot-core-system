@@ -20,12 +20,9 @@ class NodeSensorFactory extends Factory
     {
         return [
             'node_id' => Node::factory(),
-            'external_id' => 'sensor-' . $this->faker->unique()->randomNumber(5),
-            'name' => $this->faker->words(2, true) . ' Sensor',
             'sensor_type' => $this->faker->randomElement(['dht11', 'ldr', 'rain', 'soil']),
             'last_reading' => $this->faker->randomFloat(4, 0, 100),
             'limit_value' => $this->faker->randomFloat(4, 80, 100),
-            'registration_status' => 'registered',
         ];
     }
 }

@@ -43,8 +43,26 @@ class NodeManagementService
         return [
             'gateways' => Gateway::where('registration_status', true)->pluck('external_id')->filter()->values()->all(),
             'nodes' => Node::where('registration_status', 'registered')->pluck('external_id')->filter()->values()->all(),
-            'node_controllers' => NodeController::where('registration_status', 'registered')->get()->toArray(),
-            'node_sensors' => NodeSensor::where('registration_status', 'registered')->get()->toArray(),
+            'node_controllers' => NodeController::whereHas('node', function ($query) {
+                $query->where('registration_status', 'registered');
+            })->with('node:id,external_id,name,registration_status')->get()
+                ->map(function (NodeController $controller) {
+                    return array_merge($controller->toArray(), [
+                        'external_id' => $controller->node?->external_id,
+                        'name' => $controller->node?->name,
+                        'registration_status' => $controller->node?->registration_status,
+                    ]);
+                })->values()->all(),
+            'node_sensors' => NodeSensor::whereHas('node', function ($query) {
+                $query->where('registration_status', 'registered');
+            })->with('node:id,external_id,name,registration_status')->get()
+                ->map(function (NodeSensor $sensor) {
+                    return array_merge($sensor->toArray(), [
+                        'external_id' => $sensor->node?->external_id,
+                        'name' => $sensor->node?->name,
+                        'registration_status' => $sensor->node?->registration_status,
+                    ]);
+                })->values()->all(),
         ];
     }
 

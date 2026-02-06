@@ -28,4 +28,9 @@ class Map extends Model
     {
         return $this->hasMany(Fingerprint::class);
     }
+
+    protected static function newFactory()
+    {
+        return \Modules\MapModule\Database\Factories\MapFactory::new();
+    }
 }

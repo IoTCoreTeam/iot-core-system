@@ -4,7 +4,6 @@ namespace Modules\ControlModule\Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Modules\ControlModule\Models\Node;
-use Modules\ControlModule\Models\Gateway;
 
 class NodeFactory extends Factory
 {
@@ -19,10 +18,11 @@ class NodeFactory extends Factory
     public function definition(): array
     {
         return [
-            'gateway_id' => Gateway::factory(),
+            'gateway_id' => null,
             'external_id' => 'node-' . $this->faker->unique()->randomNumber(5),
             'name' => $this->faker->words(2, true) . ' Node',
-            'location' => $this->faker->secondaryAddress(),
+            'mac_address' => $this->faker->macAddress(),
+            'ip_address' => $this->faker->ipv4(),
             'registration_status' => 'registered',
             'description' => $this->faker->sentence(),
             'metadata' => [

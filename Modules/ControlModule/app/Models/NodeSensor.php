@@ -21,12 +21,9 @@ class NodeSensor extends Model
 
     protected $fillable = [
         'node_id',
-        'external_id',
-        'name',
         'sensor_type',
         'last_reading',
         'limit_value',
-        'registration_status',
     ];
 
     protected $casts = [
@@ -48,10 +45,12 @@ class NodeSensor extends Model
         $keyword = trim($keyword);
 
         return $query->where(function ($sensorQuery) use ($keyword) {
-            $sensorQuery->where('name', 'like', "%{$keyword}%")
-                ->orWhere('external_id', 'like', "%{$keyword}%")
-                ->orWhere('sensor_type', 'like', "%{$keyword}%")
-                ->orWhere('registration_status', 'like', "%{$keyword}%");
+            $sensorQuery->where('sensor_type', 'like', "%{$keyword}%")
+                ->orWhereHas('node', function ($nodeQuery) use ($keyword) {
+                    $nodeQuery->where('name', 'like', "%{$keyword}%")
+                        ->orWhere('external_id', 'like', "%{$keyword}%")
+                        ->orWhere('registration_status', 'like', "%{$keyword}%");
+                });
         });
     }
 }

@@ -19,4 +19,9 @@ class Area extends Model
     {
         return $this->hasMany(Map::class);
     }
+
+    protected static function newFactory()
+    {
+        return \Modules\MapModule\Database\Factories\AreaFactory::new();
+    }
 }

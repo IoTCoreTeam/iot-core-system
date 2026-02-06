@@ -14,11 +14,8 @@ return new class extends Migration
         Schema::create('node_controllers', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('node_id')->constrained('nodes')->cascadeOnDelete();
-            $table->string('external_id')->unique();
-            $table->string('name')->nullable();
             $table->string('firmware_version')->nullable();
-            $table->enum('registration_status', ['pending', 'registered', 'failed'])
-                ->default('pending');
+            $table->string('control_url')->nullable();
             $table->softDeletes();
             $table->timestamps();
         });

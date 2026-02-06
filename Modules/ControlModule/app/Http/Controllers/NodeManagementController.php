@@ -21,8 +21,8 @@ class NodeManagementController extends Controller
         return ApiResponse::success([
             'gateways'         => Gateway::where('registration_status', true)->pluck('external_id')->filter()->values()->all(),
             'nodes'            => Node::where('registration_status', 'registered')->pluck('external_id')->filter()->values()->all(),
-            'node_controllers' => NodeController::where('registration_status', 'registered')->pluck('external_id')->filter()->values()->all(),
-            'node_sensors'     => NodeSensor::where('registration_status', 'registered')->pluck('external_id')->filter()->values()->all(),
+            'node_controllers' => NodeController::whereHas('node', function ($query) {$query->where('registration_status', 'registered');})->with('node:id,external_id')->get()->pluck('node.external_id')->filter()->values()->all(),
+            'node_sensors'     => NodeSensor::whereHas('node', function ($query) {$query->where('registration_status', 'registered');})->with('node:id,external_id')->get()->pluck('node.external_id')->filter()->values()->all(),
         ], 'Registered node resources fetched successfully');
     }
 

@@ -14,13 +14,9 @@ return new class extends Migration
         Schema::create('node_sensors', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('node_id')->constrained('nodes')->cascadeOnDelete();
-            $table->string('external_id')->unique();
-            $table->string('name')->nullable();
             $table->string('sensor_type')->nullable();
             $table->decimal('last_reading', 10, 4)->nullable();
             $table->decimal('limit_value', 10, 4)->nullable();
-            $table->enum('registration_status', ['pending', 'registered', 'failed'])
-                ->default('pending');
             $table->softDeletes();
             $table->timestamps();
         });

@@ -9,6 +9,7 @@ use Modules\MapModule\Http\Requests\Area\StoreAreaRequest;
 use Modules\MapModule\Http\Requests\Area\UpdateAreaRequest;
 use Illuminate\Http\Request;
 use Modules\MapModule\QueryBuilders\AreaQueryBuilder;
+use Modules\ControlModule\Helpers\SystemLogHelper;
 
 class AreaController extends Controller
 {
@@ -20,8 +21,14 @@ class AreaController extends Controller
     public function store(StoreAreaRequest $request)
     {
         try{
-            Area::create($request->validated());
-            return ApiResponse::success(null, ['message' => 'Created successfully'], 201);
+            $payload = $request->validated();
+            $area = Area::create($payload);
+            SystemLogHelper::log(
+                'area.created',
+                'Created area',
+                ['area_id' => $area->id, 'name' => $area->name ?? null, 'payload' => $payload]
+            );
+            return ApiResponse::success(null, 'Created successfully', 201);
         } catch (\Throwable $e) {
             return ApiResponse::error('Failed to create map', 500, $e->getMessage());
         }
@@ -31,8 +38,14 @@ class AreaController extends Controller
     {
         try{
             $area = Area::findOrFail($id);
-            $area->update($request->validated());
-            return ApiResponse::success(null, ['message' => 'Updated successfully'], 200);
+            $payload = $request->validated();
+            $area->update($payload);
+            SystemLogHelper::log(
+                'area.updated',
+                'Updated area',
+                ['area_id' => $area->id, 'name' => $area->name ?? null, 'payload' => $payload]
+            );
+            return ApiResponse::success(null, 'Updated successfully', 200);
         } catch (\Throwable $e) {
             return ApiResponse::error('Failed to update area', 500, $e->getMessage());
         }
@@ -43,7 +56,12 @@ class AreaController extends Controller
         try{
             $area = Area::findOrFail($id);
             $area->delete();
-            return ApiResponse::success(null, ['message' => 'Deleted successfully'], 200);
+            SystemLogHelper::log(
+                'area.deleted',
+                'Deleted area',
+                ['area_id' => $area->id, 'name' => $area->name ?? null]
+            );
+            return ApiResponse::success(null, 'Deleted successfully', 200);
         } catch (\Throwable $e) {
             return ApiResponse::error('Failed to delete area', 500, $e->getMessage());
         }

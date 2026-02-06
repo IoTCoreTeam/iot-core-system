@@ -16,13 +16,17 @@ return new class extends Migration
             $table->foreignUuid('gateway_id')->nullable();
             $table->string('external_id')->unique();
             $table->string('name')->nullable();
-            $table->string('location')->nullable();
+
+            $table->string('mac_address')->nullable();
+            $table->string('ip_address')->nullable();
+
             $table->enum('registration_status', ['pending', 'registered', 'failed'])
                 ->default('pending');
             $table->text('description')->nullable();
             $table->json('metadata')->nullable();
             $table->softDeletes();
             $table->timestamps();
+
         });
     }
 

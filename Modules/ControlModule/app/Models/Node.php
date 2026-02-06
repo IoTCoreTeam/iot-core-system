@@ -23,7 +23,8 @@ class Node extends Model
         'gateway_id',
         'external_id',
         'name',
-        'location',
+        'mac_address',
+        'ip_address',
         'registration_status',
         'description',
         'metadata',
@@ -59,7 +60,6 @@ class Node extends Model
         return $query->where(function ($nodeQuery) use ($keyword) {
             $nodeQuery->where('name', 'like', "%{$keyword}%")
                 ->orWhere('external_id', 'like', "%{$keyword}%")
-                ->orWhere('location', 'like', "%{$keyword}%")
                 ->orWhere('registration_status', 'like', "%{$keyword}%");
         });
     }

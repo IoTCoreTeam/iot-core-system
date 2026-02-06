@@ -9,6 +9,7 @@ use Modules\MapModule\Http\Requests\Map\UpdateMapRequest;
 use App\Helpers\ApiResponse;
 use Illuminate\Http\Request;
 use Modules\MapModule\QueryBuilders\MapQueryBuilder;
+use Modules\ControlModule\Helpers\SystemLogHelper;
 
 class MapController extends Controller
 {
@@ -20,8 +21,14 @@ class MapController extends Controller
     public function store(StoreMapRequest $request)
     {
         try{
-            Map::create($request->validated());
-            return ApiResponse::success(null, ['message' => 'Created successfully'], 201);
+            $payload = $request->validated();
+            $map = Map::create($payload);
+            SystemLogHelper::log(
+                'map.created',
+                'Created map',
+                ['map_id' => $map->id, 'name' => $map->name ?? null, 'payload' => $payload]
+            );
+            return ApiResponse::success(null, 'Created successfully', 201);
         } catch (\Throwable $e) {
             return ApiResponse::error('Failed to create map', 500, $e->getMessage());
         }
@@ -31,8 +38,14 @@ class MapController extends Controller
     {
         try{
             $map = Map::findOrFail($id);
-            $map->update($request->validated());
-            return ApiResponse::success(null, ['message' => 'Updated successfully'], 200);
+            $payload = $request->validated();
+            $map->update($payload);
+            SystemLogHelper::log(
+                'map.updated',
+                'Updated map',
+                ['map_id' => $map->id, 'name' => $map->name ?? null, 'payload' => $payload]
+            );
+            return ApiResponse::success(null, 'Updated successfully', 200);
         } catch (\Throwable $e) {
             return ApiResponse::error('Failed to update map', 500, $e->getMessage());
         }
@@ -42,7 +55,12 @@ class MapController extends Controller
         try{
             $map = Map::findOrFail($id);
             $map->delete();
-            return ApiResponse::success(null, ['message' => 'Deleted successfully'], 200);
+            SystemLogHelper::log(
+                'map.deleted',
+                'Deleted map',
+                ['map_id' => $map->id, 'name' => $map->name ?? null]
+            );
+            return ApiResponse::success(null, 'Deleted successfully', 200);
         } catch (\Throwable $e) {
             return ApiResponse::error('Failed to delete map', 500, $e->getMessage());
         }

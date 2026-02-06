@@ -11,11 +11,6 @@ class Gateway extends Model
 {
     use HasFactory, HasUuids, SoftDeletes;
 
-    protected static function newFactory()
-    {
-        return \Modules\ControlModule\Database\Factories\GatewayFactory::new();
-    }
-
     protected $keyType = 'string';
     public $incrementing = false;
 
@@ -38,11 +33,11 @@ class Gateway extends Model
 
     public function nodeControllers()
     {
-        return $this->hasMany(NodeController::class);
+        return $this->hasManyThrough(NodeController::class, Node::class, 'gateway_id', 'node_id');
     }
 
     public function nodeSensors()
     {
-        return $this->hasMany(NodeSensor::class);
+        return $this->hasManyThrough(NodeSensor::class, Node::class, 'gateway_id', 'node_id');
     }
 }

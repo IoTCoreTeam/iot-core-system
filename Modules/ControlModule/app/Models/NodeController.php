@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Modules\ControlModule\Database\Factories\NodeControllerFactory;
 
 class NodeController extends Model
 {
@@ -13,7 +14,7 @@ class NodeController extends Model
 
     protected static function newFactory()
     {
-        return \Modules\ControlModule\Database\Factories\NodeControllerFactory::new();
+        return NodeControllerFactory::new();
     }
 
     protected $keyType = 'string';
@@ -21,10 +22,8 @@ class NodeController extends Model
 
     protected $fillable = [
         'node_id',
-        'external_id',
-        'name',
         'firmware_version',
-        'registration_status',
+        'control_url',
     ];
 
     public function node()
@@ -41,10 +40,13 @@ class NodeController extends Model
         $keyword = trim($keyword);
 
         return $query->where(function ($controllerQuery) use ($keyword) {
-            $controllerQuery->where('name', 'like', "%{$keyword}%")
-                ->orWhere('external_id', 'like', "%{$keyword}%")
-                ->orWhere('firmware_version', 'like', "%{$keyword}%")
-                ->orWhere('registration_status', 'like', "%{$keyword}%");
+            $controllerQuery->where('firmware_version', 'like', "%{$keyword}%")
+                ->orWhere('control_url', 'like', "%{$keyword}%")
+                ->orWhereHas('node', function ($nodeQuery) use ($keyword) {
+                    $nodeQuery->where('name', 'like', "%{$keyword}%")
+                        ->orWhere('external_id', 'like', "%{$keyword}%")
+                        ->orWhere('registration_status', 'like', "%{$keyword}%");
+                });
         });
     }
 }

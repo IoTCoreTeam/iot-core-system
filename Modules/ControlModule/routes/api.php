@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Modules\ControlModule\Http\Controllers\GatewayController;
+use Modules\ControlModule\Http\Controllers\NodeController;
 use Modules\ControlModule\Http\Controllers\NodeManagementController;
 
 /*
@@ -22,6 +23,12 @@ Route::middleware(['auth:api', 'admin'])->prefix('v1')->group(function () {
         Route::post('/register', [GatewayController::class, 'registation'])->name('gateways.register');
         Route::post('{external_id}/deactivate', [GatewayController::class, 'deactivation'])->name('gateways.deactivate');
         Route::delete('{external_id}', [GatewayController::class, 'delete'])->name('gateways.delete');
+    });
+
+    Route::prefix('nodes')->group(function (): void {
+        Route::get('/', [NodeController::class, 'index'])->name('nodes.index');
+        Route::post('/register', [NodeController::class, 'registation'])->name('nodes.register');
+        Route::post('{external_id}/deactivate', [NodeController::class, 'deactivation'])->name('nodes.deactivate');
     });
 });
 
