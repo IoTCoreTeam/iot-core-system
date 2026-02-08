@@ -3,7 +3,6 @@
 use Illuminate\Support\Facades\Route;
 use Modules\ControlModule\Http\Controllers\GatewayController;
 use Modules\ControlModule\Http\Controllers\NodeController;
-use Modules\ControlModule\Http\Controllers\NodeManagementController;
 
 /*
 |--------------------------------------------------------------------------
@@ -32,4 +31,13 @@ Route::middleware(['auth:api', 'admin'])->prefix('v1')->group(function () {
     });
 });
 
-Route::get('available-nodes', [NodeManagementController::class, 'index'])->name('available-nodes.index');
+Route::middleware(['auth:api', 'admin', 'engineer'])->prefix('v1')->group(function () {
+    Route::prefix('nodes-controller')->group(function (): void {
+        Route::post('register', [NodeController::class, 'registerNodeController'])->name('node-controller.register');
+    });
+    Route::prefix('nodes-sensor')->group(function (): void {
+        Route::post('register', [NodeController::class, 'registerNodeSensor'])->name('node-sensor.register');
+    });
+});
+
+Route::get('available-nodes', [NodeController::class, 'getActiveDevices'])->name('available-nodes.index');

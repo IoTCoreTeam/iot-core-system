@@ -11,11 +11,6 @@ class NodeSensor extends Model
 {
     use HasFactory, HasUuids, SoftDeletes;
 
-    protected static function newFactory()
-    {
-        return \Modules\ControlModule\Database\Factories\NodeSensorFactory::new();
-    }
-
     protected $keyType = 'string';
     public $incrementing = false;
 

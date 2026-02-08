@@ -12,11 +12,6 @@ class NodeController extends Model
 {
     use HasFactory, HasUuids, SoftDeletes;
 
-    protected static function newFactory()
-    {
-        return NodeControllerFactory::new();
-    }
-
     protected $keyType = 'string';
     public $incrementing = false;
 

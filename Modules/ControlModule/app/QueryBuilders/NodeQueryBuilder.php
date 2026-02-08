@@ -4,6 +4,7 @@ namespace Modules\ControlModule\QueryBuilders;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Modules\ControlModule\Models\Gateway;
 use Modules\ControlModule\Models\Node;
 use Modules\ControlModule\Models\NodeController;
 use Modules\ControlModule\Models\NodeSensor;
@@ -21,25 +22,112 @@ class NodeQueryBuilder
     public static function buildQuery(Request $request): Builder
     {
         $type = strtolower((string) $request->query('type', ''));
+        $query = Node::query();
 
         if ($type === 'controller') {
-            $query = NodeController::query();
+            $query->whereHas('controllers');
+            $query = self::applyNodeFilters($query, $request, false);
 
-            return self::applyControllerFilters($query, $request);
+            return self::applyControllerRelationFilters($query, $request);
         }
 
         if ($type === 'sensor') {
-            $query = NodeSensor::query();
+            $query->whereHas('sensors');
+            $query = self::applyNodeFilters($query, $request, false);
 
-            return self::applySensorFilters($query, $request);
+            return self::applySensorRelationFilters($query, $request);
         }
-
-        $query = Node::query();
 
         return self::applyNodeFilters($query, $request);
     }
 
-    private static function applyNodeFilters(Builder $query, Request $request): Builder
+    /**
+     * @return array{
+     *     gateways: array<int, string>,
+     *     nodes: array<int, string>,
+     *     node_controllers: array<int, string>,
+     *     node_sensors: array<int, string>
+     * }
+     */
+    public static function getActiveDevicesPayload(): array
+    {
+        return [
+            'gateways' => Gateway::where('registration_status', true)
+                ->pluck('external_id')
+                ->filter()
+                ->values()
+                ->all(),
+            'nodes' => Node::where('registration_status', 'registered')
+                ->pluck('external_id')
+                ->filter()
+                ->values()
+                ->all(),
+            'node_controllers' => NodeController::whereHas('node', function ($query) {
+                $query->where('registration_status', 'registered');
+            })->with('node:id,external_id')
+                ->get()
+                ->pluck('node.external_id')
+                ->filter()
+                ->values()
+                ->all(),
+            'node_sensors' => NodeSensor::whereHas('node', function ($query) {
+                $query->where('registration_status', 'registered');
+            })->with('node:id,external_id')
+                ->get()
+                ->pluck('node.external_id')
+                ->filter()
+                ->values()
+                ->all(),
+        ];
+    }
+
+    /**
+     * @return array{
+     *     gateways: array<int, string>,
+     *     nodes: array<int, string>,
+     *     node_controllers: array<int, mixed>,
+     *     node_sensors: array<int, mixed>
+     * }
+     */
+    public static function getWhitelistPayload(): array
+    {
+        return [
+            'gateways' => Gateway::where('registration_status', true)
+                ->pluck('external_id')
+                ->filter()
+                ->values()
+                ->all(),
+            'nodes' => Node::where('registration_status', 'registered')
+                ->pluck('external_id')
+                ->filter()
+                ->values()
+                ->all(),
+            'node_controllers' => NodeController::whereHas('node', function ($query) {
+                $query->where('registration_status', 'registered');
+            })->with('node:id,external_id,name,registration_status')
+                ->get()
+                ->map(function (NodeController $controller) {
+                    return array_merge($controller->toArray(), [
+                        'external_id' => $controller->node?->external_id,
+                        'name' => $controller->node?->name,
+                        'registration_status' => $controller->node?->registration_status,
+                    ]);
+                })->values()->all(),
+            'node_sensors' => NodeSensor::whereHas('node', function ($query) {
+                $query->where('registration_status', 'registered');
+            })->with('node:id,external_id,name,registration_status')
+                ->get()
+                ->map(function (NodeSensor $sensor) {
+                    return array_merge($sensor->toArray(), [
+                        'external_id' => $sensor->node?->external_id,
+                        'name' => $sensor->node?->name,
+                        'registration_status' => $sensor->node?->registration_status,
+                    ]);
+                })->values()->all(),
+        ];
+    }
+
+    private static function applyNodeFilters(Builder $query, Request $request, bool $includeSearch = true): Builder
     {
         if ($request->has('external_id')) {
             return $query->where('external_id', $request->query('external_id'));
@@ -65,7 +153,7 @@ class NodeQueryBuilder
             return $query->where('metadata', $request->query('metadata'));
         }
 
-        if ($request->has('search')) {
+        if ($includeSearch && $request->has('search')) {
             $keyword = $request->query('search');
 
             return self::applyNodeSearch($query, $keyword);
@@ -74,99 +162,80 @@ class NodeQueryBuilder
         return $query;
     }
 
-    private static function applyControllerFilters(Builder $query, Request $request): Builder
+    private static function applyControllerRelationFilters(Builder $query, Request $request): Builder
     {
-        if ($request->has('external_id')) {
-            return $query->whereHas('node', function (Builder $nodeQuery) use ($request) {
-                $nodeQuery->where('external_id', $request->query('external_id'));
-            });
-        }
-
-        if ($request->has('name')) {
-            return $query->whereHas('node', function (Builder $nodeQuery) use ($request) {
-                $nodeQuery->where('name', $request->query('name'));
-            });
-        }
-
         if ($request->has('node_id')) {
-            return $query->where('node_id', $request->query('node_id'));
-        }
-
-        if ($request->has('gateway_id')) {
-            return $query->whereHas('node', function (Builder $nodeQuery) use ($request) {
-                $nodeQuery->where('gateway_id', $request->query('gateway_id'));
+            return $query->whereHas('controllers', function (Builder $controllerQuery) use ($request) {
+                $controllerQuery->where('node_id', $request->query('node_id'));
             });
         }
 
         if ($request->has('firmware_version')) {
-            return $query->where('firmware_version', $request->query('firmware_version'));
+            return $query->whereHas('controllers', function (Builder $controllerQuery) use ($request) {
+                $controllerQuery->where('firmware_version', $request->query('firmware_version'));
+            });
         }
 
         if ($request->has('control_url')) {
-            return $query->where('control_url', $request->query('control_url'));
-        }
-
-        if ($request->has('registration_status')) {
-            return $query->whereHas('node', function (Builder $nodeQuery) use ($request) {
-                $nodeQuery->where('registration_status', $request->query('registration_status'));
+            return $query->whereHas('controllers', function (Builder $controllerQuery) use ($request) {
+                $controllerQuery->where('control_url', $request->query('control_url'));
             });
         }
 
         if ($request->has('search')) {
             $keyword = $request->query('search');
 
-            return self::applyControllerSearch($query, $keyword);
+            return $query->where(function (Builder $nodeQuery) use ($keyword) {
+                $nodeQuery->where('name', 'like', "%{$keyword}%")
+                    ->orWhere('external_id', 'like', "%{$keyword}%")
+                    ->orWhere('registration_status', 'like', "%{$keyword}%")
+                    ->orWhereHas('controllers', function (Builder $controllerQuery) use ($keyword) {
+                        $controllerQuery->where('firmware_version', 'like', "%{$keyword}%")
+                            ->orWhere('control_url', 'like', "%{$keyword}%");
+                    });
+            });
         }
 
         return $query;
     }
 
-    private static function applySensorFilters(Builder $query, Request $request): Builder
+    private static function applySensorRelationFilters(Builder $query, Request $request): Builder
     {
-        if ($request->has('external_id')) {
-            return $query->whereHas('node', function (Builder $nodeQuery) use ($request) {
-                $nodeQuery->where('external_id', $request->query('external_id'));
-            });
-        }
-
-        if ($request->has('name')) {
-            return $query->whereHas('node', function (Builder $nodeQuery) use ($request) {
-                $nodeQuery->where('name', $request->query('name'));
-            });
-        }
-
         if ($request->has('node_id')) {
-            return $query->where('node_id', $request->query('node_id'));
-        }
-
-        if ($request->has('gateway_id')) {
-            return $query->whereHas('node', function (Builder $nodeQuery) use ($request) {
-                $nodeQuery->where('gateway_id', $request->query('gateway_id'));
+            return $query->whereHas('sensors', function (Builder $sensorQuery) use ($request) {
+                $sensorQuery->where('node_id', $request->query('node_id'));
             });
         }
 
         if ($request->has('sensor_type')) {
-            return $query->where('sensor_type', $request->query('sensor_type'));
+            return $query->whereHas('sensors', function (Builder $sensorQuery) use ($request) {
+                $sensorQuery->where('sensor_type', $request->query('sensor_type'));
+            });
         }
 
         if ($request->has('last_reading')) {
-            return $query->where('last_reading', $request->query('last_reading'));
+            return $query->whereHas('sensors', function (Builder $sensorQuery) use ($request) {
+                $sensorQuery->where('last_reading', $request->query('last_reading'));
+            });
         }
 
         if ($request->has('limit_value')) {
-            return $query->where('limit_value', $request->query('limit_value'));
-        }
-
-        if ($request->has('registration_status')) {
-            return $query->whereHas('node', function (Builder $nodeQuery) use ($request) {
-                $nodeQuery->where('registration_status', $request->query('registration_status'));
+            return $query->whereHas('sensors', function (Builder $sensorQuery) use ($request) {
+                $sensorQuery->where('limit_value', $request->query('limit_value'));
             });
         }
 
         if ($request->has('search')) {
             $keyword = $request->query('search');
 
-            return self::applySensorSearch($query, $keyword);
+            return $query->where(function (Builder $nodeQuery) use ($keyword) {
+                $nodeQuery->where('name', 'like', "%{$keyword}%")
+                    ->orWhere('external_id', 'like', "%{$keyword}%")
+                    ->orWhere('registration_status', 'like', "%{$keyword}%")
+                    ->orWhereHas('sensors', function (Builder $sensorQuery) use ($keyword) {
+                        $sensorQuery->where('sensor_type', 'like', "%{$keyword}%");
+                    });
+            });
         }
 
         return $query;

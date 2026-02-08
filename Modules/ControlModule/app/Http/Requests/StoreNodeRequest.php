@@ -27,6 +27,7 @@ class StoreNodeRequest extends FormRequest
             'name' => 'nullable|string|max:255',
             'mac_address' => 'nullable|string|max:255',
             'ip_address' => 'nullable|string|max:45',
+            'type' => 'nullable|string|in:controller,sensor,other',
             'description' => 'nullable|string',
             'metadata' => 'nullable|array',
             'registration_status' => 'nullable|string|in:pending,registered,failed',

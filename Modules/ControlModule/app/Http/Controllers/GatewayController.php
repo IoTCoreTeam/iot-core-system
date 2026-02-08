@@ -24,7 +24,7 @@ class GatewayController extends Controller
             $result = DB::transaction(function () use ($payload) {
 
                 $result = $this->gatewayService->register($payload);
-                NodeManagementController::sendAvailableNode();
+                NodeController::sendAvailableNode();
 
                 return $result;
             });
@@ -48,7 +48,7 @@ class GatewayController extends Controller
             $result = DB::transaction(function () use ($externalId) {
 
                 $result = $this->gatewayService->deactivate($externalId);
-                NodeManagementController::sendAvailableNode();
+                NodeController::sendAvailableNode();
 
                 return $result;
             });
@@ -73,7 +73,7 @@ class GatewayController extends Controller
         try {
             DB::transaction(function () use ($external_id) {
                 $this->gatewayService->deleteByExternalId($external_id);
-                NodeManagementController::sendAvailableNode();
+                NodeController::sendAvailableNode();
             });
 
             return ApiResponse::success(null, 'Gateway soft deleted successfully');

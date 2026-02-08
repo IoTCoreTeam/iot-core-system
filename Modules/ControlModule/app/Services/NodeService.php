@@ -17,16 +17,21 @@ class NodeService
      */
     public function register(array $payload): array
     {
+        $input = $payload;
         $payload = [
-            'external_id' => $payload['external_id'],
-            'gateway_id' => $payload['gateway_id'] ?? null,
-            'name' => $payload['name'] ?? null,
-            'mac_address' => $payload['mac_address'] ?? null,
-            'ip_address' => $payload['ip_address'] ?? null,
-            'description' => $payload['description'] ?? null,
-            'metadata' => $payload['metadata'] ?? null,
+            'external_id' => $input['external_id'],
+            'gateway_id' => $input['gateway_id'] ?? null,
+            'name' => $input['name'] ?? null,
+            'mac_address' => $input['mac_address'] ?? null,
+            'ip_address' => $input['ip_address'] ?? null,
+            'description' => $input['description'] ?? null,
+            'metadata' => $input['metadata'] ?? null,
             'registration_status' => 'registered',
         ];
+
+        if (array_key_exists('type', $input) && $input['type'] !== null) {
+            $payload['type'] = $input['type'];
+        }
 
         $node = Node::where('external_id', $payload['external_id'])->first();
         $created = false;
