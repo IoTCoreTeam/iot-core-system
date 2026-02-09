@@ -45,23 +45,28 @@ class NodeQueryBuilder
      * @return array{
      *     gateways: array<int, string>,
      *     nodes: array<int, string>,
+     *     gateway_nodes: array<string, array<int, string>>,
      *     node_controllers: array<int, string>,
      *     node_sensors: array<int, string>
      * }
      */
     public static function getActiveDevicesPayload(): array
     {
+        $gateways = Gateway::where('registration_status', true)
+            ->pluck('external_id')
+            ->filter()
+            ->values()
+            ->all();
+        $nodes = Node::where('registration_status', 'registered')
+            ->pluck('external_id')
+            ->filter()
+            ->values()
+            ->all();
+
         return [
-            'gateways' => Gateway::where('registration_status', true)
-                ->pluck('external_id')
-                ->filter()
-                ->values()
-                ->all(),
-            'nodes' => Node::where('registration_status', 'registered')
-                ->pluck('external_id')
-                ->filter()
-                ->values()
-                ->all(),
+            'gateways' => $gateways,
+            'nodes' => $nodes,
+            'gateway_nodes' => self::buildGatewayNodesMap($gateways),
             'node_controllers' => NodeController::whereHas('node', function ($query) {
                 $query->where('registration_status', 'registered');
             })->with('node:id,external_id')
@@ -85,23 +90,28 @@ class NodeQueryBuilder
      * @return array{
      *     gateways: array<int, string>,
      *     nodes: array<int, string>,
+     *     gateway_nodes: array<string, array<int, string>>,
      *     node_controllers: array<int, mixed>,
      *     node_sensors: array<int, mixed>
      * }
      */
     public static function getWhitelistPayload(): array
     {
+        $gateways = Gateway::where('registration_status', true)
+            ->pluck('external_id')
+            ->filter()
+            ->values()
+            ->all();
+        $nodes = Node::where('registration_status', 'registered')
+            ->pluck('external_id')
+            ->filter()
+            ->values()
+            ->all();
+
         return [
-            'gateways' => Gateway::where('registration_status', true)
-                ->pluck('external_id')
-                ->filter()
-                ->values()
-                ->all(),
-            'nodes' => Node::where('registration_status', 'registered')
-                ->pluck('external_id')
-                ->filter()
-                ->values()
-                ->all(),
+            'gateways' => $gateways,
+            'nodes' => $nodes,
+            'gateway_nodes' => self::buildGatewayNodesMap($gateways),
             'node_controllers' => NodeController::whereHas('node', function ($query) {
                 $query->where('registration_status', 'registered');
             })->with('node:id,external_id,name,registration_status')
@@ -125,6 +135,43 @@ class NodeQueryBuilder
                     ]);
                 })->values()->all(),
         ];
+    }
+
+    /**
+     * @param array<int, string> $gatewayExternalIds
+     * @return array<string, array<int, string>>
+     */
+    private static function buildGatewayNodesMap(array $gatewayExternalIds): array
+    {
+        $map = [];
+        foreach ($gatewayExternalIds as $gatewayExternalId) {
+            $map[$gatewayExternalId] = [];
+        }
+
+        if (empty($gatewayExternalIds)) {
+            return $map;
+        }
+
+        $nodes = Node::where('registration_status', 'registered')
+            ->whereHas('gateway', function ($query) {
+                $query->where('registration_status', true);
+            })
+            ->with('gateway:id,external_id')
+            ->get(['id', 'gateway_id', 'external_id']);
+
+        foreach ($nodes as $node) {
+            $gatewayExternalId = $node->gateway?->external_id;
+            if (! $gatewayExternalId || ! array_key_exists($gatewayExternalId, $map)) {
+                continue;
+            }
+            $map[$gatewayExternalId][] = $node->external_id;
+        }
+
+        foreach ($map as $gatewayExternalId => $nodeExternalIds) {
+            $map[$gatewayExternalId] = array_values(array_unique($nodeExternalIds));
+        }
+
+        return $map;
     }
 
     private static function applyNodeFilters(Builder $query, Request $request, bool $includeSearch = true): Builder
