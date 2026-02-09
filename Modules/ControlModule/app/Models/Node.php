@@ -23,11 +23,6 @@ class Node extends Model
         'ip_address',
         'registration_status',
         'description',
-        'metadata',
-    ];
-
-    protected $casts = [
-        'metadata' => 'array',
     ];
 
     public function gateway()

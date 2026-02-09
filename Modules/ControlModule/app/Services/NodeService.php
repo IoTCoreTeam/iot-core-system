@@ -25,7 +25,6 @@ class NodeService
             'mac_address' => $input['mac_address'] ?? null,
             'ip_address' => $input['ip_address'] ?? null,
             'description' => $input['description'] ?? null,
-            'metadata' => $input['metadata'] ?? null,
             'registration_status' => 'registered',
         ];
 

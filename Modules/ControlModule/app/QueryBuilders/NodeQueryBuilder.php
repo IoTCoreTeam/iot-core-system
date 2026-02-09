@@ -149,10 +149,6 @@ class NodeQueryBuilder
             return $query->where('description', $request->query('description'));
         }
 
-        if ($request->has('metadata')) {
-            return $query->where('metadata', $request->query('metadata'));
-        }
-
         if ($includeSearch && $request->has('search')) {
             $keyword = $request->query('search');
 

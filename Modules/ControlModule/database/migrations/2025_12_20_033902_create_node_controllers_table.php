@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignUuid('node_id')->constrained('nodes')->cascadeOnDelete();
             $table->string('firmware_version')->nullable();
             $table->string('control_url')->nullable();
+            $table->string('input_type')->default('digital')->nullable();
             $table->softDeletes();
             $table->timestamps();
         });

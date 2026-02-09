@@ -21,10 +21,8 @@ return new class extends Migration
             $table->string('ip_address')->nullable();
             $table->enum('type', ['controller', 'sensor', 'other'])->default('other');
 
-            $table->enum('registration_status', ['pending', 'registered', 'failed'])
-                ->default('pending');
+            $table->enum('registration_status', ['pending', 'registered', 'failed'])->default('pending');
             $table->text('description')->nullable();
-            $table->json('metadata')->nullable();
             $table->softDeletes();
             $table->timestamps();
 
