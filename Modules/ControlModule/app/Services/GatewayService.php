@@ -4,6 +4,7 @@ namespace Modules\ControlModule\Services;
 
 use Modules\ControlModule\Helpers\SystemLogHelper;
 use Modules\ControlModule\Models\Gateway;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class GatewayService
@@ -45,7 +46,11 @@ class GatewayService
     public function deactivate(string $externalId): array
     {
         $gateway = Gateway::where('external_id', $externalId)->firstOrFail();
-        $gateway->update(['registration_status' => false]);
+
+        DB::transaction(function () use ($gateway) {
+            $gateway->nodes()->forceDelete();
+            $gateway->update(['registration_status' => false]);
+        });
 
         SystemLogHelper::log('gateway.deactivated', 'Gateway deactivated successfully', ['gateway_id' => $gateway->id]);
 
