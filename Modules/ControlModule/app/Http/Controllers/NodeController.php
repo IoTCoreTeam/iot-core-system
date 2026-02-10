@@ -87,6 +87,7 @@ class NodeController extends Controller
     {
         try {
             $nodeController = NodeControllerModel::updateOrCreate(['node_id' => $request->node_id], $request->validated());
+            self::sendAvailableNode();
             return ApiResponse::success($nodeController, 'Node controller registered or updated successfully');
         } catch (Throwable $e) {
             report($e);
@@ -101,6 +102,7 @@ class NodeController extends Controller
     {
         try {
             $nodeSensor = NodeSensor::updateOrCreate(['node_id' => $request->node_id], $request->validated());
+            self::sendAvailableNode();
             return ApiResponse::success($nodeSensor, 'Node sensor registered or updated successfully');
         } catch (Throwable $e) {
             report($e);
