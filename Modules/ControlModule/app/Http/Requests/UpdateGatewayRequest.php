@@ -41,12 +41,10 @@ class UpdateGatewayRequest extends FormRequest
                 'string',
                 'max:255',
                 Rule::unique('gateways', 'external_id')
-                    ->ignore($ignoreId)
-                    ->whereNull('deleted_at'),
+                    ->ignore($ignoreId),
             ],
-            'mac_address'        => ['sometimes', 'nullable', 'string', 'max:255'],
-            'ip_address'         => ['sometimes', 'nullable', 'ip'],
-            'registration_status' => ['sometimes', 'nullable', 'boolean'],
+            'mac_address' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'ip_address' => ['sometimes', 'nullable', 'ip'],
         ];
     }
 }

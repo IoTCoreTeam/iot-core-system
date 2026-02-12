@@ -5,12 +5,10 @@ namespace Modules\ControlModule\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Modules\ControlModule\Database\Factories\NodeControllerFactory;
 
 class NodeController extends Model
 {
-    use HasFactory, HasUuids, SoftDeletes;
+    use HasFactory, HasUuids;
 
     protected $keyType = 'string';
     public $incrementing = false;
@@ -39,8 +37,7 @@ class NodeController extends Model
                 ->orWhere('control_url', 'like', "%{$keyword}%")
                 ->orWhereHas('node', function ($nodeQuery) use ($keyword) {
                     $nodeQuery->where('name', 'like', "%{$keyword}%")
-                        ->orWhere('external_id', 'like', "%{$keyword}%")
-                        ->orWhere('registration_status', 'like', "%{$keyword}%");
+                        ->orWhere('external_id', 'like', "%{$keyword}%");
                 });
         });
     }

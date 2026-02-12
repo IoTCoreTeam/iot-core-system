@@ -5,11 +5,10 @@ namespace Modules\ControlModule\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Gateway extends Model
 {
-    use HasFactory, HasUuids, SoftDeletes;
+    use HasFactory, HasUuids;
 
     protected $keyType = 'string';
     public $incrementing = false;
@@ -19,11 +18,6 @@ class Gateway extends Model
         'external_id',
         'mac_address',
         'ip_address',
-        'registration_status',
-    ];
-
-    protected $casts = [
-        'registration_status' => 'boolean',
     ];
 
     public function nodes()

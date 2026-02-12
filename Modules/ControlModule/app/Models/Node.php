@@ -5,11 +5,10 @@ namespace Modules\ControlModule\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Node extends Model
 {
-    use HasFactory, HasUuids, SoftDeletes;
+    use HasFactory, HasUuids;
 
 
     protected $keyType = 'string';
@@ -21,8 +20,7 @@ class Node extends Model
         'name',
         'mac_address',
         'ip_address',
-        'registration_status',
-        'description',
+        'type',
     ];
 
     public function gateway()
@@ -50,8 +48,7 @@ class Node extends Model
 
         return $query->where(function ($nodeQuery) use ($keyword) {
             $nodeQuery->where('name', 'like', "%{$keyword}%")
-                ->orWhere('external_id', 'like', "%{$keyword}%")
-                ->orWhere('registration_status', 'like', "%{$keyword}%");
+                ->orWhere('external_id', 'like', "%{$keyword}%");
         });
     }
 }

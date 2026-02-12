@@ -17,7 +17,6 @@ return new class extends Migration
             $table->string('firmware_version')->nullable();
             $table->string('control_url')->nullable();
             $table->string('input_type')->default('digital')->nullable();
-            $table->softDeletes();
             $table->timestamps();
         });
     }

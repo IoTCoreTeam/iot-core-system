@@ -24,8 +24,6 @@ class NodeService
             'name' => $input['name'] ?? null,
             'mac_address' => $input['mac_address'] ?? null,
             'ip_address' => $input['ip_address'] ?? null,
-            'description' => $input['description'] ?? null,
-            'registration_status' => 'registered',
         ];
 
         if (array_key_exists('type', $input) && $input['type'] !== null) {
@@ -61,13 +59,16 @@ class NodeService
     public function deactivate(string $externalId): array
     {
         $node = Node::where('external_id', $externalId)->firstOrFail();
-        $node->update(['registration_status' => 'pending']);
 
-        SystemLogHelper::log('node.deactivated', 'Node deactivated successfully', ['node_id' => $node->id]);
+        $node->controllers()->forceDelete();
+        $node->sensors()->forceDelete();
+        $node->delete();
+
+        SystemLogHelper::log('node.deactivated', 'Node deleted successfully', ['node_id' => $node->id]);
 
         return [
-            'node' => $node->refresh(),
-            'message' => 'Node deactivated successfully',
+            'node' => $node,
+            'message' => 'Node deleted successfully',
         ];
     }
 }

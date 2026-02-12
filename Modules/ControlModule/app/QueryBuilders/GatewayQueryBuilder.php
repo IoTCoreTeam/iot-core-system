@@ -36,14 +36,6 @@ class GatewayQueryBuilder
             return $query->where('mac_address', $request->query('mac_address'));
         }
 
-        if ($request->has('registration_status')) {
-            $statusParam = $request->query('registration_status');
-            $booleanStatus = filter_var($statusParam, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
-            if ($booleanStatus !== null) {
-                return $query->where('registration_status', $booleanStatus);
-            }
-        }
-
         if ($request->has('search')) {
             $keyword = $request->query('search');
 
@@ -55,12 +47,9 @@ class GatewayQueryBuilder
 
     private static function applySearch(Builder $query, string $keyword): Builder
     {
-        $boolKeyword = filter_var($keyword, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
-
         return $query->where('name', 'like', "%{$keyword}%")
             ->orWhere('external_id', 'like', "%{$keyword}%")
             ->orWhere('mac_address', 'like', "%{$keyword}%")
-            ->orWhere('ip_address', 'like', "%{$keyword}%")
-            ->when($boolKeyword !== null, fn(Builder $query) => $query->orWhere('registration_status', $boolKeyword));
+            ->orWhere('ip_address', 'like', "%{$keyword}%");
     }
 }

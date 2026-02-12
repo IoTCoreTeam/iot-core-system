@@ -25,14 +25,14 @@ class NodeQueryBuilder
         $query = Node::query();
 
         if ($type === 'controller') {
-            $query->whereHas('controllers');
+            $query->whereHas('controllers')->with('controllers');
             $query = self::applyNodeFilters($query, $request, false);
 
             return self::applyControllerRelationFilters($query, $request);
         }
 
         if ($type === 'sensor') {
-            $query->whereHas('sensors');
+            $query->whereHas('sensors')->with('sensors');
             $query = self::applyNodeFilters($query, $request, false);
 
             return self::applySensorRelationFilters($query, $request);
@@ -52,13 +52,11 @@ class NodeQueryBuilder
      */
     public static function getActiveDevicesPayload(): array
     {
-        $gateways = Gateway::where('registration_status', true)
-            ->pluck('external_id')
+        $gateways = Gateway::pluck('external_id')
             ->filter()
             ->values()
             ->all();
-        $nodes = Node::where('registration_status', 'registered')
-            ->pluck('external_id')
+        $nodes = Node::pluck('external_id')
             ->filter()
             ->values()
             ->all();
@@ -67,17 +65,13 @@ class NodeQueryBuilder
             'gateways' => $gateways,
             'nodes' => $nodes,
             'gateway_nodes' => self::buildGatewayNodesMap($gateways),
-            'node_controllers' => NodeController::whereHas('node', function ($query) {
-                $query->where('registration_status', 'registered');
-            })->with('node:id,external_id')
+            'node_controllers' => NodeController::whereHas('node')->with('node:id,external_id')
                 ->get()
                 ->pluck('node.external_id')
                 ->filter()
                 ->values()
                 ->all(),
-            'node_sensors' => NodeSensor::whereHas('node', function ($query) {
-                $query->where('registration_status', 'registered');
-            })->with('node:id,external_id')
+            'node_sensors' => NodeSensor::whereHas('node')->with('node:id,external_id')
                 ->get()
                 ->pluck('node.external_id')
                 ->filter()
@@ -97,13 +91,11 @@ class NodeQueryBuilder
      */
     public static function getWhitelistPayload(): array
     {
-        $gateways = Gateway::where('registration_status', true)
-            ->pluck('external_id')
+        $gateways = Gateway::pluck('external_id')
             ->filter()
             ->values()
             ->all();
-        $nodes = Node::where('registration_status', 'registered')
-            ->pluck('external_id')
+        $nodes = Node::pluck('external_id')
             ->filter()
             ->values()
             ->all();
@@ -112,26 +104,20 @@ class NodeQueryBuilder
             'gateways' => $gateways,
             'nodes' => $nodes,
             'gateway_nodes' => self::buildGatewayNodesMap($gateways),
-            'node_controllers' => NodeController::whereHas('node', function ($query) {
-                $query->where('registration_status', 'registered');
-            })->with('node:id,external_id,name,registration_status')
+            'node_controllers' => NodeController::whereHas('node')->with('node:id,external_id,name')
                 ->get()
                 ->map(function (NodeController $controller) {
                     return array_merge($controller->toArray(), [
                         'external_id' => $controller->node?->external_id,
                         'name' => $controller->node?->name,
-                        'registration_status' => $controller->node?->registration_status,
                     ]);
                 })->values()->all(),
-            'node_sensors' => NodeSensor::whereHas('node', function ($query) {
-                $query->where('registration_status', 'registered');
-            })->with('node:id,external_id,name,registration_status')
+            'node_sensors' => NodeSensor::whereHas('node')->with('node:id,external_id,name')
                 ->get()
                 ->map(function (NodeSensor $sensor) {
                     return array_merge($sensor->toArray(), [
                         'external_id' => $sensor->node?->external_id,
                         'name' => $sensor->node?->name,
-                        'registration_status' => $sensor->node?->registration_status,
                     ]);
                 })->values()->all(),
         ];
@@ -152,10 +138,7 @@ class NodeQueryBuilder
             return $map;
         }
 
-        $nodes = Node::where('registration_status', 'registered')
-            ->whereHas('gateway', function ($query) {
-                $query->where('registration_status', true);
-            })
+        $nodes = Node::whereHas('gateway')
             ->with('gateway:id,external_id')
             ->get(['id', 'gateway_id', 'external_id']);
 
@@ -186,14 +169,6 @@ class NodeQueryBuilder
 
         if ($request->has('gateway_id')) {
             return $query->where('gateway_id', $request->query('gateway_id'));
-        }
-
-        if ($request->has('registration_status')) {
-            return $query->where('registration_status', $request->query('registration_status'));
-        }
-
-        if ($request->has('description')) {
-            return $query->where('description', $request->query('description'));
         }
 
         if ($includeSearch && $request->has('search')) {
@@ -231,7 +206,6 @@ class NodeQueryBuilder
             return $query->where(function (Builder $nodeQuery) use ($keyword) {
                 $nodeQuery->where('name', 'like', "%{$keyword}%")
                     ->orWhere('external_id', 'like', "%{$keyword}%")
-                    ->orWhere('registration_status', 'like', "%{$keyword}%")
                     ->orWhereHas('controllers', function (Builder $controllerQuery) use ($keyword) {
                         $controllerQuery->where('firmware_version', 'like', "%{$keyword}%")
                             ->orWhere('control_url', 'like', "%{$keyword}%");
@@ -274,7 +248,6 @@ class NodeQueryBuilder
             return $query->where(function (Builder $nodeQuery) use ($keyword) {
                 $nodeQuery->where('name', 'like', "%{$keyword}%")
                     ->orWhere('external_id', 'like', "%{$keyword}%")
-                    ->orWhere('registration_status', 'like', "%{$keyword}%")
                     ->orWhereHas('sensors', function (Builder $sensorQuery) use ($keyword) {
                         $sensorQuery->where('sensor_type', 'like', "%{$keyword}%");
                     });
@@ -287,8 +260,7 @@ class NodeQueryBuilder
     private static function applyNodeSearch(Builder $query, string $keyword): Builder
     {
         return $query->where('name', 'like', "%{$keyword}%")
-            ->orWhere('external_id', 'like', "%{$keyword}%")
-            ->orWhere('registration_status', 'like', "%{$keyword}%");
+            ->orWhere('external_id', 'like', "%{$keyword}%");
     }
 
     private static function applyControllerSearch(Builder $query, string $keyword): Builder
@@ -298,8 +270,7 @@ class NodeQueryBuilder
                 ->orWhere('control_url', 'like', "%{$keyword}%")
                 ->orWhereHas('node', function (Builder $nodeQuery) use ($keyword) {
                     $nodeQuery->where('name', 'like', "%{$keyword}%")
-                        ->orWhere('external_id', 'like', "%{$keyword}%")
-                        ->orWhere('registration_status', 'like', "%{$keyword}%");
+                        ->orWhere('external_id', 'like', "%{$keyword}%");
                 });
         });
     }
@@ -310,8 +281,7 @@ class NodeQueryBuilder
             $sensorQuery->where('sensor_type', 'like', "%{$keyword}%")
                 ->orWhereHas('node', function (Builder $nodeQuery) use ($keyword) {
                     $nodeQuery->where('name', 'like', "%{$keyword}%")
-                        ->orWhere('external_id', 'like', "%{$keyword}%")
-                        ->orWhere('registration_status', 'like', "%{$keyword}%");
+                        ->orWhere('external_id', 'like', "%{$keyword}%");
                 });
         });
     }

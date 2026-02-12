@@ -61,7 +61,7 @@ class NodeController extends Controller
         } catch (Throwable $e) {
             report($e);
             SystemLogHelper::log('node.deactivation_failed', $e->getMessage(), ['external_id' => $externalId], ['level' => 'error']);
-            $errorMessage = config('app.debug') ? $e->getMessage() : 'Failed to deactivate node';
+            $errorMessage = config('app.debug') ? $e->getMessage() : 'Failed to delete node';
             return ApiResponse::error($errorMessage, 500);
         }
     }
@@ -83,33 +83,38 @@ class NodeController extends Controller
     }
 
     // Node controller handle here
+
     public function registerNodeController(StoreNodeControllerRequest $request)
     {
         try {
-            $nodeController = NodeControllerModel::updateOrCreate(['node_id' => $request->node_id], $request->validated());
-            self::sendAvailableNode();
+            $nodeController = DB::transaction(function () use ($request) {
+                $nodeController = NodeControllerModel::updateOrCreate(['node_id' => $request->node_id],$request->validated());
+                self::sendAvailableNode();
+                return $nodeController;
+            });
             return ApiResponse::success($nodeController, 'Node controller registered or updated successfully');
         } catch (Throwable $e) {
             report($e);
-            SystemLogHelper::log('node_controller.registration_failed', $e->getMessage(), ['payload' => $request->all()], ['level' => 'error']);
-            $errorMessage = config('app.debug') ? $e->getMessage() : 'Failed to register or update node controller';
+            SystemLogHelper::log('node_controller.registration_failed',$e->getMessage(),['payload' => $request->all()],['level' => 'error']);
+            $errorMessage = config('app.debug')? $e->getMessage(): 'Failed to register or update node controller';
             return ApiResponse::error($errorMessage, 500);
         }
     }
 
-    // Node sensor handle here
     public function registerNodeSensor(StoreNodeSensorRequest $request)
     {
         try {
-            $nodeSensor = NodeSensor::updateOrCreate(['node_id' => $request->node_id], $request->validated());
-            self::sendAvailableNode();
+            $nodeSensor = DB::transaction(function () use ($request) {
+                $nodeSensor = NodeSensor::updateOrCreate(['node_id' => $request->node_id],$request->validated());
+                self::sendAvailableNode();
+                return $nodeSensor;
+            });
             return ApiResponse::success($nodeSensor, 'Node sensor registered or updated successfully');
         } catch (Throwable $e) {
             report($e);
-            SystemLogHelper::log('node_sensor.registration_failed', $e->getMessage(), ['payload' => $request->all()], ['level' => 'error']);
-            $errorMessage = config('app.debug') ? $e->getMessage() : 'Failed to register or update node sensor';
+            SystemLogHelper::log('node_sensor.registration_failed',$e->getMessage(),['payload' => $request->all()],['level' => 'error']);
+            $errorMessage = config('app.debug')? $e->getMessage(): 'Failed to register or update node sensor';
             return ApiResponse::error($errorMessage, 500);
         }
     }
-
 }

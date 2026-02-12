@@ -58,7 +58,7 @@ class GatewayController extends Controller
         } catch (Throwable $e) {
             report($e);
             SystemLogHelper::log('gateway.deactivation_failed', $e->getMessage(), ['external_id' => $externalId], ['level' => 'error']);
-            $errorMessage = config('app.debug') ? $e->getMessage() : 'Failed to deactivate gateway';
+            $errorMessage = config('app.debug') ? $e->getMessage() : 'Failed to delete gateway';
             return ApiResponse::error($errorMessage, 500);
         }
     }

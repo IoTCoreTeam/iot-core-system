@@ -17,8 +17,6 @@ return new class extends Migration
             $table->string('external_id')->unique()->nullable();
             $table->string('mac_address')->nullable();
             $table->string('ip_address')->nullable();
-            $table->boolean('registration_status')->default(true);
-            $table->softdeletes();
             $table->timestamps();
         });
     }

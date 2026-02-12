@@ -25,7 +25,6 @@ class GatewayService
             $gateway = Gateway::create($payload);
             $created = true;
         }
-        $gateway->update(['registration_status' => true]);
 
         SystemLogHelper::log(
             'gateway.registered',
@@ -48,15 +47,17 @@ class GatewayService
         $gateway = Gateway::where('external_id', $externalId)->firstOrFail();
 
         DB::transaction(function () use ($gateway) {
+            $gateway->nodeControllers()->forceDelete();
+            $gateway->nodeSensors()->forceDelete();
             $gateway->nodes()->forceDelete();
-            $gateway->update(['registration_status' => false]);
+            $gateway->forceDelete();
         });
 
-        SystemLogHelper::log('gateway.deactivated', 'Gateway deactivated successfully', ['gateway_id' => $gateway->id]);
+        SystemLogHelper::log('gateway.deactivated', 'Gateway deleted successfully', ['gateway_id' => $gateway->id]);
 
         return [
-            'gateway' => $gateway->refresh(),
-            'message' => 'Gateway deactivated successfully',
+            'gateway' => $gateway,
+            'message' => 'Gateway deleted successfully',
         ];
     }
 

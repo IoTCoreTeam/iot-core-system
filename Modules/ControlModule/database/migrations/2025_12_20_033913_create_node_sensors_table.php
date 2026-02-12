@@ -17,7 +17,6 @@ return new class extends Migration
             $table->string('sensor_type')->nullable();
             $table->decimal('last_reading', 10, 4)->nullable();
             $table->decimal('limit_value', 10, 4)->nullable();
-            $table->softDeletes();
             $table->timestamps();
         });
     }
