@@ -60,8 +60,6 @@ class NodeService
     {
         $node = Node::where('external_id', $externalId)->firstOrFail();
 
-        $node->controllers()->forceDelete();
-        $node->sensors()->forceDelete();
         $node->delete();
 
         SystemLogHelper::log('node.deactivated', 'Node deleted successfully', ['node_id' => $node->id]);

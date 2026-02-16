@@ -47,10 +47,10 @@ class GatewayService
         $gateway = Gateway::where('external_id', $externalId)->firstOrFail();
 
         DB::transaction(function () use ($gateway) {
-            $gateway->nodeControllers()->forceDelete();
-            $gateway->nodeSensors()->forceDelete();
-            $gateway->nodes()->forceDelete();
-            $gateway->forceDelete();
+            $gateway->nodeControllers()->delete();
+            $gateway->nodeSensors()->delete();
+            $gateway->nodes()->delete();
+            $gateway->delete();
         });
 
         SystemLogHelper::log('gateway.deactivated', 'Gateway deleted successfully', ['gateway_id' => $gateway->id]);

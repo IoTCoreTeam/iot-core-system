@@ -27,11 +27,11 @@ class Gateway extends Model
 
     public function nodeControllers()
     {
-        return $this->hasManyThrough(NodeController::class, Node::class, 'gateway_id', 'node_id');
+        return $this->nodes()->where('type', 'controller');
     }
 
     public function nodeSensors()
     {
-        return $this->hasManyThrough(NodeSensor::class, Node::class, 'gateway_id', 'node_id');
+        return $this->nodes()->where('type', 'sensor');
     }
 }

@@ -28,16 +28,6 @@ class Node extends Model
         return $this->belongsTo(Gateway::class);
     }
 
-    public function controllers()
-    {
-        return $this->hasMany(NodeController::class);
-    }
-
-    public function sensors()
-    {
-        return $this->hasMany(NodeSensor::class);
-    }
-
     public function scopeSearch($query, ?string $keyword)
     {
         if (! $keyword) {

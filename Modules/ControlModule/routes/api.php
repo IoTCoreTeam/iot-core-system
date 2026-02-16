@@ -31,13 +31,4 @@ Route::middleware(['auth:api', 'admin'])->prefix('v1')->group(function () {
     });
 });
 
-Route::middleware(['auth:api', 'admin_or_engineer'])->prefix('v1')->group(function () {
-    Route::prefix('nodes-controller')->group(function (): void {
-        Route::post('register', [NodeController::class, 'registerNodeController'])->name('node-controller.register');
-    });
-    Route::prefix('nodes-sensor')->group(function (): void {
-        Route::post('register', [NodeController::class, 'registerNodeSensor'])->name('node-sensor.register');
-    });
-});
-
 Route::get('available-nodes', [NodeController::class, 'getActiveDevices'])->name('available-nodes.index');
