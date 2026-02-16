@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Modules\ControlModule\Http\Controllers\ControlUrlController;
 use Modules\ControlModule\Http\Controllers\GatewayController;
 use Modules\ControlModule\Http\Controllers\NodeController;
 
@@ -28,6 +29,13 @@ Route::middleware(['auth:api', 'admin'])->prefix('v1')->group(function () {
         Route::get('/', [NodeController::class, 'index'])->name('nodes.index');
         Route::post('/register', [NodeController::class, 'registation'])->name('nodes.register');
         Route::post('{external_id}/deactivate', [NodeController::class, 'deactivation'])->name('nodes.deactivate');
+    });
+
+    Route::prefix('control-urls')->group(function (): void {
+        Route::get('/', [ControlUrlController::class, 'index'])->name('control-urls.index');
+        Route::post('/', [ControlUrlController::class, 'store'])->name('control-urls.store');
+        Route::put('{id}', [ControlUrlController::class, 'update'])->name('control-urls.update');
+        Route::delete('{id}', [ControlUrlController::class, 'delete'])->name('control-urls.delete');
     });
 });
 

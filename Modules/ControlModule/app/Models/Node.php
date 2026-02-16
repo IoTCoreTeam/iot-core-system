@@ -28,6 +28,11 @@ class Node extends Model
         return $this->belongsTo(Gateway::class);
     }
 
+    public function controlUrls()
+    {
+        return $this->hasMany(ControlUrl::class);
+    }
+
     public function scopeSearch($query, ?string $keyword)
     {
         if (! $keyword) {

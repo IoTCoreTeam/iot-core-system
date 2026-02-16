@@ -1,0 +1,28 @@
+<?php
+
+namespace Modules\ControlModule\Models;
+
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class ControlUrl extends Model
+{
+    use HasFactory, HasUuids;
+
+    protected $keyType = 'string';
+    public $incrementing = false;
+
+    protected $fillable = [
+        'node_id',
+        'name',
+        'url',
+        'input_type',
+        'status',
+    ];
+
+    public function node()
+    {
+        return $this->belongsTo(Node::class);
+    }
+}
