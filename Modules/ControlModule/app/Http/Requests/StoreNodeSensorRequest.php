@@ -22,7 +22,7 @@ class StoreNodeSensorRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'node_id' => 'required|string|max:255|exists:nodes,external_id',
+            'node_id' => 'required|string|max:255|exists:nodes,id',
             'sensor_type' => 'nullable|string|max:255',
             'last_reading' => 'nullable|numeric',
             'limit_value' => 'nullable|numeric',

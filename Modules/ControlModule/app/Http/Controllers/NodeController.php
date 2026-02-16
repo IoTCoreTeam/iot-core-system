@@ -83,7 +83,6 @@ class NodeController extends Controller
     }
 
     // Node controller handle here
-
     public function registerNodeController(StoreNodeControllerRequest $request)
     {
         try {

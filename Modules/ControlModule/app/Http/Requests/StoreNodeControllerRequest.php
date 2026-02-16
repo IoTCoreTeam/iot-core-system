@@ -22,7 +22,7 @@ class StoreNodeControllerRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'node_id' => 'required|string|max:255|exists:nodes,external_id',
+            'node_id' => 'required|string|max:255|exists:nodes,id',
             'firmware_version' => 'nullable|string|max:255',
             'control_url' => 'nullable|string|max:255',
         ];

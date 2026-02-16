@@ -60,10 +60,20 @@ class NodeQueryBuilder
             ->filter()
             ->values()
             ->all();
+        $nodeDetails = Node::query()
+            ->get(['external_id', 'name'])
+            ->filter(fn ($node) => ! empty($node->external_id))
+            ->map(fn ($node) => [
+                'external_id' => $node->external_id,
+                'name' => $node->name,
+            ])
+            ->values()
+            ->all();
 
         return [
             'gateways' => $gateways,
             'nodes' => $nodes,
+            'node_details' => $nodeDetails,
             'gateway_nodes' => self::buildGatewayNodesMap($gateways),
             'node_controllers' => NodeController::whereHas('node')->with('node:id,external_id')
                 ->get()
