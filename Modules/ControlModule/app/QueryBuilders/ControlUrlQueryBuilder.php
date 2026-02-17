@@ -20,6 +20,18 @@ class ControlUrlQueryBuilder
     {
         $query = ControlUrl::query();
 
+        $includes = collect(explode(',', (string) $request->query('include', '')))
+            ->map(fn ($include) => trim((string) $include))
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($includes->contains('gateway')) {
+            $query->with('node.gateway');
+        } elseif ($includes->contains('node')) {
+            $query->with('node');
+        }
+
         if ($request->has('name')) {
             $query->where('name', $request->query('name'));
         }
