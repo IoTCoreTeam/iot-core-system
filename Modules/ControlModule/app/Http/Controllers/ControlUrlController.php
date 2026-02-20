@@ -76,4 +76,22 @@ class ControlUrlController extends Controller
             return ApiResponse::error($errorMessage, 500);
         }
     }
+
+    public function executeControlUrl(Request $request, string $id)
+    {
+        try {
+            $payload = $request->all();
+            $result = $this->controlUrlService->execute($id, $payload);
+
+            return ApiResponse::success($result['control_url'], $result['message'], $result['status']);
+        } catch (Throwable $e) {
+            report($e);
+
+            SystemLogHelper::log('control_url.execution_failed', $e->getMessage(), ['control_url_id' => $id,], ['level' => 'error']);
+
+            $errorMessage = config('app.debug') ? $e->getMessage() : 'Failed to execute control url';
+
+            return ApiResponse::error($errorMessage, 500);
+        }
+    }
 }

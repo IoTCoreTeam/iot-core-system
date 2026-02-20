@@ -68,7 +68,7 @@ class NodeController extends Controller
         return NodeQueryBuilder::fromRequest($request);
     }
 
-    public function getActiveDevices(): JsonResponse // hàm này để client, 3rd party gọi lấy danh sách node đã đăng ký
+    public function getActiveDevices(): JsonResponse // hàm này để client, server gọi lấy danh sách node đã đăng ký
     {
         return ApiResponse::success(NodeQueryBuilder::getActiveDevicesPayload(), 'Registered node resources fetched successfully');
     }

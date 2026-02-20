@@ -35,6 +35,7 @@ Route::middleware(['auth:api', 'admin'])->prefix('v1')->group(function () {
         Route::get('/', [ControlUrlController::class, 'index'])->name('control-urls.index');
         Route::post('/', [ControlUrlController::class, 'store'])->name('control-urls.store');
         Route::put('{id}', [ControlUrlController::class, 'update'])->name('control-urls.update');
+        Route::post('{id}/execute', [ControlUrlController::class, 'executeControlUrl'])->name('control-urls.execute');
         Route::delete('{id}', [ControlUrlController::class, 'delete'])->name('control-urls.delete');
     });
 });
