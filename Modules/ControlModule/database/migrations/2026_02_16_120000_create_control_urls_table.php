@@ -17,7 +17,6 @@ return new class extends Migration
             $table->string('name');
             $table->string('url');
             $table->string('input_type');
-            $table->enum('status', ['on', 'off'])->default('on');
             $table->timestamps();
         });
     }

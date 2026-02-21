@@ -14,11 +14,11 @@ class ControlUrl extends Model
     public $incrementing = false;
 
     protected $fillable = [
+        'controller_id',
         'node_id',
         'name',
         'url',
         'input_type',
-        'status',
     ];
 
     public function node()

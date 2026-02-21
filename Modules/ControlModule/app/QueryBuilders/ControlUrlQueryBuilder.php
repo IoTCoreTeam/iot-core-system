@@ -36,10 +36,6 @@ class ControlUrlQueryBuilder
             $query->where('name', $request->query('name'));
         }
 
-        if ($request->has('status')) {
-            $query->where('status', $request->query('status'));
-        }
-
         if ($request->has('input_type')) {
             $query->where('input_type', $request->query('input_type'));
         }

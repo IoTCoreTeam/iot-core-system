@@ -3,7 +3,6 @@
 namespace Modules\ControlModule\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class UpdateControlUrlRequest extends FormRequest
 {
@@ -23,11 +22,11 @@ class UpdateControlUrlRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'controller_id' => ['sometimes', 'required', 'string', 'max:255'],
             'node_id' => ['sometimes', 'required', 'string', 'max:255'],
             'name' => ['sometimes', 'required', 'string', 'max:255'],
             'url' => ['sometimes', 'required', 'string', 'max:2048'],
             'input_type' => ['sometimes', 'required', 'string', 'max:100'],
-            'status' => ['sometimes', 'required', 'string', Rule::in(['on', 'off'])],
         ];
     }
 }

@@ -17,7 +17,7 @@ class ControlUrlService
     public function create(array $payload): array
     {
         $controlUrl = DB::transaction(function () use ($payload) {
-            return ControlUrl::create($payload);
+            return $this->upsertByControllerId($payload);
         });
 
         SystemLogHelper::log('control_url.created', 'Control url created successfully', [
@@ -38,6 +38,9 @@ class ControlUrlService
     public function update(string $id, array $payload): array
     {
         $controlUrl = DB::transaction(function () use ($id, $payload) {
+            if (! empty($payload['controller_id'])) {
+                return $this->upsertByControllerId($payload);
+            }
             $controlUrl = ControlUrl::findOrFail($id);
             $controlUrl->update($payload);
             return $controlUrl;
@@ -56,7 +59,9 @@ class ControlUrlService
     public function delete(string $id): void
     {
         DB::transaction(function () use ($id) {
-            $controlUrl = ControlUrl::findOrFail($id);
+            $controlUrl = ControlUrl::where('id', $id)
+                ->orWhere('controller_id', $id)
+                ->firstOrFail();
             $controlUrl->delete();
         });
 
@@ -73,9 +78,6 @@ class ControlUrlService
     {
         return DB::transaction(function () use ($id, $payload) {
             $controlUrl = ControlUrl::with('node.gateway')->findOrFail($id);
-
-            $status = $this->resolveStatus($payload);
-            if ($status !== null) {$controlUrl->status = $status; $controlUrl->save();}
 
             $endpoint = $this->resolveEndpoint($controlUrl, $payload);
             $commandPayload = $this->buildCommandPayload($controlUrl, $payload);
@@ -117,20 +119,6 @@ class ControlUrlService
     /**
      * @param array<string, mixed> $payload
      */
-    private function resolveStatus(array $payload): ?string
-    {
-        $status = $payload['status'] ?? $payload['state'] ?? null;
-        if (! is_string($status)) {
-            return null;
-        }
-
-        $status = strtolower(trim($status));
-        return in_array($status, ['on', 'off'], true) ? $status : null;
-    }
-
-    /**
-     * @param array<string, mixed> $payload
-     */
     private function resolveEndpoint(ControlUrl $controlUrl, array $payload): string
     {
         $url = (string) ($payload['url'] ?? $controlUrl->url);
@@ -167,5 +155,24 @@ class ControlUrlService
         $commandPayload['requested_at'] = $commandPayload['requested_at'] ?? now()->toISOString();
 
         return $commandPayload;
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    private function upsertByControllerId(array $payload): ControlUrl
+    {
+        $controllerId = isset($payload['controller_id']) ? (string) $payload['controller_id'] : '';
+        if ($controllerId === '') {
+            return ControlUrl::create($payload);
+        }
+
+        $existing = ControlUrl::where('controller_id', $controllerId)->first();
+        if ($existing) {
+            $existing->update($payload);
+            return $existing;
+        }
+
+        return ControlUrl::create($payload);
     }
 }

@@ -3,7 +3,6 @@
 namespace Modules\ControlModule\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class StoreControlUrlRequest extends FormRequest
 {
@@ -23,11 +22,11 @@ class StoreControlUrlRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'controller_id' => ['required', 'string', 'max:255'],
             'node_id' => ['required', 'string', 'max:255'],
             'name' => ['required', 'string', 'max:255'],
             'url' => ['required', 'string', 'max:2048'],
             'input_type' => ['required', 'string', 'max:100'],
-            'status' => ['nullable', 'string', Rule::in(['on', 'off'])],
         ];
     }
 }
