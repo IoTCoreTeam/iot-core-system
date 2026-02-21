@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\WorkflowController;
 use Modules\ControlModule\Http\Controllers\ControlUrlController;
 use Modules\ControlModule\Http\Controllers\GatewayController;
 use Modules\ControlModule\Http\Controllers\NodeController;
@@ -37,6 +38,13 @@ Route::middleware(['auth:api', 'admin'])->prefix('v1')->group(function () {
         Route::put('{id}', [ControlUrlController::class, 'update'])->name('control-urls.update');
         Route::post('{id}/execute', [ControlUrlController::class, 'executeControlUrl'])->name('control-urls.execute');
         Route::delete('{id}', [ControlUrlController::class, 'delete'])->name('control-urls.delete');
+    });
+
+    Route::prefix('workflows')->group(function (): void {
+        Route::get('/', [WorkflowController::class, 'index'])->name('workflows.index');
+        Route::post('/', [WorkflowController::class, 'store'])->name('workflows.store');
+        Route::put('{workflow}', [WorkflowController::class, 'update'])->name('workflows.update');
+        Route::delete('{workflow}', [WorkflowController::class, 'destroy'])->name('workflows.delete');
     });
 });
 
