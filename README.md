@@ -4,42 +4,7 @@ This repository serves as the central backend service for the IoT-core platform,
 
 ## Core Features
 
-### 1. Centralized Authentication (Laravel Passport)
-- Managed OAuth2 server for issuing JWT Access Tokens and Refresh Tokens.
-- Provides authentication flows for the Frontend (Nuxt), Control Module, and other microservices.
-- Management of Personal Access and Password Grant clients.
-
-### 2. User and Account Management
-- Comprehensive management of users, roles (Admin, User), and company associations.
-- Advanced filtering and search capabilities for user administration.
-
-### 3. Modular Architecture
-- Leverages `nwidart/laravel-modules` for strict separation of business logic.
-- Designed for high scalability and maintainable code structure.
-
-### 4. Control Module (IoT Management)
-- Administration of IoT Gateways and End-Nodes.
-- Registration and deactivation workflows for Gateways.
-- API endpoints for querying available nodes and device status.
-
-### 5. System Logging and Audit
-- Integrated system logging for audit trails and troubleshooting.
-
----
-
-## Module Structure
-
-The backend follows a modular architectural pattern:
-
-- `app/`: Contains core Laravel application logic (Models, Controllers, Providers).
-  - Includes global models such as `User.php`, `Company.php`, and `SystemLog.php`.
-- `Modules/`: Directory for independent business modules.
-  - `ControlModule/`: Dedicated module for IoT logic.
-    - `app/Http/Controllers/`: Controllers for Gateway and Node management.
-    - `database/`: Module-specific migrations, factories, and seeders.
-    - `routes/api.php`: API endpoints for device interaction.
-- `database/`: System-wide migrations and seeders for core entities.
-- `routes/`: Primary application routes (authentication, web).
+The backend provides centralized authentication with Laravel Passport, including login, token refresh, logout, registration, and password changes for web and service clients while managing personal access and password grant clients. It delivers user and company account manage features with role-aware access, filtering, and updates, plus admin-only visibility into system logs and metrics such as weekly log counts for audit and monitoring workflows. The Control Module exposes versioned endpoints to manage gateways, nodes, and control URLs, including registration, deactivation, execution, and deletion actions, alongside a public endpoint for listing available active nodes. The Map Module provides versioned endpoints to manage areas and maps used by location features.
 
 ---
 
