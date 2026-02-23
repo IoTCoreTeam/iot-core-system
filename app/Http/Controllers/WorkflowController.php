@@ -5,61 +5,33 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreWorkflowRequest;
 use App\Http\Requests\UpdateWorkflowRequest;
 use App\Models\Workflow;
-use Carbon\Carbon;
+use App\Queries\WorkflowQueryBuilder;
+use App\Services\WorkflowRunService;
 use Illuminate\Http\Request;
 use Modules\ControlModule\Helpers\ApiResponse;
 
 class WorkflowController extends Controller
 {
+    public function __construct(
+        private readonly WorkflowQueryBuilder $workflowQueryBuilder,
+        private readonly WorkflowRunService $workflowRunService
+    ) {}
+    
+    private function defaultDefinition(): array
+    {
+        return [
+            'version' => 1,
+            'nodes' => [],
+            'edges' => [],
+        ];
+    }
+
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
     {
-        $perPage = $request->integer('per_page', 10);
-        $query = Workflow::query();
-
-        if ($request->filled('id')) {
-            $query->where('id', $request->query('id'));
-        }
-
-        if ($request->filled('name')) {
-            $name = (string) $request->query('name');
-            $query->where('name', 'like', "%{$name}%");
-        }
-
-        if ($request->filled('status')) {
-            $query->where('status', $request->query('status'));
-        }
-
-        if ($request->filled('created_from') || $request->filled('created_to')) {
-            $createdFrom = $request->query('created_from');
-            $createdTo = $request->query('created_to');
-            try {
-                $from = $createdFrom ? Carbon::parse($createdFrom) : null;
-                $to = $createdTo ? Carbon::parse($createdTo) : null;
-                if ($from && $to) {
-                    $query->whereBetween('created_at', [$from, $to]);
-                } elseif ($from) {
-                    $query->where('created_at', '>=', $from);
-                } elseif ($to) {
-                    $query->where('created_at', '<=', $to);
-                }
-            } catch (\Throwable $e) {
-                // Ignore invalid date filters.
-            }
-        }
-
-        if ($request->filled('search')) {
-            $keyword = (string) $request->query('search');
-            $query->where(function ($searchQuery) use ($keyword) {
-                $searchQuery->where('name', 'like', "%{$keyword}%")
-                    ->orWhere('status', 'like', "%{$keyword}%")
-                    ->orWhere('id', 'like', "%{$keyword}%");
-            });
-        }
-
-        return $query->orderByDesc('updated_at')->paginate($perPage);
+        return $this->workflowQueryBuilder->paginate($request);
     }
 
     /**
@@ -68,9 +40,20 @@ class WorkflowController extends Controller
     public function store(StoreWorkflowRequest $request)
     {
         $payload = $request->validated();
+        if (array_key_exists('definition', $payload) && $payload['definition'] === null) {
+            $payload['definition'] = $this->defaultDefinition();
+        }
         $workflow = Workflow::create($payload);
 
         return ApiResponse::success($workflow->refresh(), 'Workflow created successfully', 201);
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(Workflow $workflow)
+    {
+        return ApiResponse::success($workflow, 'Workflow loaded successfully');
     }
 
     /**
@@ -79,6 +62,9 @@ class WorkflowController extends Controller
     public function update(UpdateWorkflowRequest $request, Workflow $workflow)
     {
         $payload = $request->validated();
+        if (array_key_exists('definition', $payload) && $payload['definition'] === null) {
+            $payload['definition'] = $this->defaultDefinition();
+        }
         $workflow->update($payload);
 
         return ApiResponse::success($workflow->refresh(), 'Workflow updated successfully');
@@ -92,5 +78,18 @@ class WorkflowController extends Controller
         $workflow->delete();
 
         return ApiResponse::success(null, 'Workflow deleted successfully');
+    }
+
+    /**
+     * Execute a workflow.
+     */
+    public function run(Workflow $workflow)
+    {
+        try {
+            $result = $this->workflowRunService->run($workflow);
+            return ApiResponse::success($result, 'Workflow executed successfully');
+        } catch (\Throwable $e) {
+            return ApiResponse::error($e->getMessage(), 400);
+        }
     }
 }

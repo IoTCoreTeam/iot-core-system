@@ -42,8 +42,10 @@ Route::middleware(['auth:api', 'admin'])->prefix('v1')->group(function () {
 
     Route::prefix('workflows')->group(function (): void {
         Route::get('/', [WorkflowController::class, 'index'])->name('workflows.index');
+        Route::get('{workflow}', [WorkflowController::class, 'show'])->name('workflows.show');
         Route::post('/', [WorkflowController::class, 'store'])->name('workflows.store');
         Route::put('{workflow}', [WorkflowController::class, 'update'])->name('workflows.update');
+        Route::post('{workflow}/run', [WorkflowController::class, 'run'])->name('workflows.run');
         Route::delete('{workflow}', [WorkflowController::class, 'destroy'])->name('workflows.delete');
     });
 });

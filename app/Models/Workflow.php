@@ -17,10 +17,12 @@ class Workflow extends Model
     protected $fillable = [
         'name',
         'definition',
+        'control_definition',
         'status',
     ];
 
     protected $casts = [
         'definition' => 'array',
+        'control_definition' => 'array',
     ];
 }

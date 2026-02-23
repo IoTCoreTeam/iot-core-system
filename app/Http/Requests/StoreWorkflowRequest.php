@@ -23,7 +23,8 @@ class StoreWorkflowRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'definition' => ['required', 'array'],
+            'definition' => ['nullable', 'array'],
+            'control_definition' => ['nullable', 'array'],
             'status' => ['sometimes', 'string', 'in:draft,active,inactive'],
         ];
     }
